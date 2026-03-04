@@ -3,7 +3,7 @@ import json
 import time
 import asyncio
 
-from backend.sockets.runner import Engine
+from backend.managers.codeRunner import Engine
 class Commit:
     def __init__(self, playerid, code):
         self.playerid = playerid
@@ -97,11 +97,10 @@ class Game:
 
 
 
-    async def addPlayer(self, id, websocket, name):
+    async def addPlayer(self, id, websocket):
         player = Player(
             id=id,
             websocket=websocket,
-            userName=name
         )  
         self.players.append(player)
 

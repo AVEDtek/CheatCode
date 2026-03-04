@@ -43,7 +43,7 @@ Frontend -> Backend:
     Request: cast-vote
         roomId
         playerId
-    Response:
+    Response: vote-casted
         voteList
 
 Backend -> Frontend
