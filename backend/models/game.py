@@ -38,22 +38,19 @@ class Game:
         self.time_left = 0
         self.timer_task = None
 
-        self.players = self.shuffle_players(players)
+        self.players = players
+        random.shuffle(self.players)
+        self.assign_imposter()
         self.current_player_idx = 0
 
-        self.problem, self.testCycle = self.load_random_problem_and_test_cycle()
-        self.test_runner = TestRunner(self.testCycle)
-
         self.commits = []
-        
-    def shuffle_players(self, players):
-        random.shuffle(players)
-        return players
+
+        self.problem, self.test_cycle = self.load_random_problem_and_test_cycle()
+        self.test_runner = TestRunner(self.test_cycle)
     
-    def assign_imposter(self, players):
-        imposter = random.choice(players)
+    def assign_imposter(self):
+        imposter = random.choice(self.players)
         imposter.set_imposter()
-        return imposter
     
     def load_random_problem_and_test_cycle(self):
         file_path = 'backend/data/problems.json'
@@ -99,17 +96,18 @@ class Game:
 
     def run_tests(self, code):
         result = self.test_runner.run_tests(code)
-        outputs, passed = self.parse_results(result)
-        return outputs, passed
+        outputs, passed, all_passed = self.parse_results(result)
+        return outputs, passed, all_passed
 
     def parse_results(self, result):
         try:
             results = json.loads(result.stdout)
             outputs = [r.get("output") for r in results]
             passed = [r.get("passed") for r in results]
-            return outputs, passed
+            all_passed = all(passed)
+            return outputs, passed, all_passed
         except json.JSONDecodeError:
-            return None, None
+            return None, None, False
 
     def cast_vote(self, player_id):
         for player in self.players:
@@ -131,7 +129,7 @@ class Game:
         self.time_left = seconds
         try:
             while self.time_left > 0:
-                await self.room.emit({
+                await self.room.broadcast({
                     "type": "time-left",
                     "timeLeft": self.time_left
                 })
@@ -141,37 +139,41 @@ class Game:
             if self.state == GameState.CODING:
                 current_player = self.players[self.current_player_idx]
                 websocket = current_player.websocket
-                await websocket.send(json.dumps({"type": "next-turn"}))
+                await websocket.send(json.dumps({
+                    "type": "next-turn"
+                }))
             elif self.state == GameState.VOTING:
                 self.set_results()
                 await self.stop_timer()
-                voted = self.get_voted()
                 response = {
                     "type": "vote-over",
-                    "voted": voted,
+                    "voted": self.get_voted(),
                     "votedCorrectly": self.get_imposter_id() in voted
                 }
-                await self.room.emit(response)
+                await self.room.broadcast(response)
         except asyncio.CancelledError:
             pass
 
-    def set_next_player_idx(self):
+    def next_turn(self, player_id, code):
+        self.add_commit(player_id, code)
         self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
-        return self.players[self.current_player_idx].id
+        asyncio.create_task(self.stop_timer())
+        self.timer_task = asyncio.create_task(self.start_timer(120))
     
     def get_voted(self):
         max_votes = max(player.votes for player in self.players)
         candidates = [player for player in self.players if player.votes == max_votes]
-        
         return [candidate.id for candidate in candidates]
 
-    def set_voting(self):
+    def set_voting(self, player_id, code):
         self.state = GameState.VOTING
+        self.add_commit(player_id, code)
+        asyncio.create_task(self.stop_timer())
+        self.timer_task = asyncio.create_task(self.start_timer(300))
 
     def set_results(self):
         self.state = GameState.RESULTS
 
-    # Getters for server responses
     def get_player_ids(self):
         return [player.id for player in self.players]
 
@@ -185,7 +187,7 @@ class Game:
         return self.problem
 
     def get_test_cycle(self):
-        return self.testCycle
+        return self.test_cycle
 
     def get_commits(self):
         return self.commits

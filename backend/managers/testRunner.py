@@ -33,14 +33,14 @@ class TestRunner:
 
             runner_code = textwrap.dedent(f"""
                 import json
-                import solution
+                import test
 
                 FUNC_NAME = {safe_func_name!r}
 
                 tests = json.loads({tests_json!r})
                 results = []
 
-                func = getattr(solution, FUNC_NAME)
+                func = getattr(test, FUNC_NAME)
 
                 for t in tests:
                     try:

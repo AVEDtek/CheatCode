@@ -4,8 +4,8 @@ from backend.models.player import Player
 from backend.models.game import Game
 
 class Room:
-    def __init__(self):
-        self.id = None
+    def __init__(self, id):
+        self.id = id
         self.players = [] 
         self.game = None
 
@@ -26,10 +26,7 @@ class Room:
     def get_game(self):
         return self.game
 
-    async def emit(self, message):
-        if not self.players:
-            return
-
+    async def broadcast(self, message):
         await asyncio.gather(*[
             player.websocket.send(json.dumps(message))
             for player in self.players

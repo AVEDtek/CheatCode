@@ -20,7 +20,7 @@
                 "Array"
             ],
             "code": "def twoSum(nums, target):\n    # Write your solution here\n    pass",
-            "testCycles": [
+            "testCycle": [
                 {
                     "input": {
                         "nums": [
