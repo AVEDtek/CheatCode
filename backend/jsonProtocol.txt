@@ -8,12 +8,14 @@ Frontend -> Backend:
         playerId
     Response: room-created
         roomId
+        playerId
 
     Request: join-room
         roomId
         playerId
     Response: room-joined
         roomId
+        playerId
         playerList
 
     Request: start-game
@@ -41,6 +43,9 @@ Frontend -> Backend:
         votes
 
 Backend -> Frontend
+    Message: player-joined
+        playerList
+
     Message: time-left
         timeLeft
 

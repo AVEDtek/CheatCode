@@ -1,4 +1,9 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useSocket } from "./SocketContext";
+
+type GameProviderProps = {
+    children: ReactNode;
+};
 
 const GameContext = createContext({
     gameState: "",
@@ -15,7 +20,9 @@ const GameContext = createContext({
     votedCorrectly: false
 });
 
-export function GameProvider({ children }: { children: React.ReactNode }) {
+export default function GameProvider({ children }: GameProviderProps) {
+    const { onMessage } = useSocket();
+
     const [gameState, setGameState] = useState("coding");
     const [time, setTime] = useState(0);
 
@@ -31,6 +38,34 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const [votes, setVotes] = useState(null);
     const [voted, setVoted] = useState([]);
     const [votedCorrectly, setVotedCorrectly] = useState(false);
+
+    // Listen only to game-related messages
+    useEffect(() => {
+        const unsubGameStart = onMessage("game-start", (data) => {
+            console.log("Game started:", data);
+            setGameState("coding");
+            setProblem(data.problem);
+            setPlayers(data.players);
+            setImposter(data.imposter);
+        });
+
+        const unsubGameState = onMessage("game-state", (data) => {
+            console.log("Game state updated:", data);
+            setGameState(data.state);
+            setTime(data.time);
+        });
+
+        const unsubPlayerCode = onMessage("player-code", (data) => {
+            console.log("Player code received:", data);
+            setCode(data.code);
+        });
+
+        return () => {
+            unsubGameStart();
+            unsubGameState();
+            unsubPlayerCode();
+        };
+    }, [onMessage]);
 
     const value = {
         gameState,

@@ -1,18 +1,31 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import LobbyUserCard from "../components/LobbyUserCard.tsx";
 
 import { useRoom } from "../contexts/RoomContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
 
+type LobbyLocationState = {
+  roomId: string;
+  username: string;
+  players: string[];
+};
+
 export default function Lobby() {
-  const {
-    roomId,
-    players,
-  } = useRoom();
+  const { roomId, players, setRoomId, setUsername, setPlayers } = useRoom();
+  const location = useLocation();
+  const navState = location.state as LobbyLocationState;
 
   const {
 
   } = useGame();
 
+  useEffect(() => {
+    setRoomId(navState.roomId);
+    setUsername(navState.username);
+    setPlayers(navState.players);
+
+  }, [navState]);
 
   async function copyCode() {
 
@@ -40,7 +53,7 @@ export default function Lobby() {
             </h1>
             {players.map((player) => (
               <div key={player}>
-                <LobbyUserCard Username={player} />
+                <LobbyUserCard username={player} />
               </div>
             ))}
           </div>

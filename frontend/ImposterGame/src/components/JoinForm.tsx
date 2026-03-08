@@ -1,15 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSocket } from "../contexts/SocketContext.tsx";
 
 type JoinFormProps = {
   onCancelJoinClick: () => void;
 };
 
 export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
+  const { isConnected, send, onMessage } = useSocket();
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [roomId, setRoomId] = useState("");
+
+  useEffect(() => {
+    const unsubRoom = onMessage("room-joined", (data) => {
+      navigate("/Lobby", {
+        state: {
+          roomId: data.roomId,
+          username: username,
+          players: data.playerList,
+        },
+      });
+    });
+
+    return () => unsubRoom();
+  }, [onMessage, navigate, username]);
 
   function onJoinClick() {
+    if (!username.trim()) {
+      console.error("Username cannot be empty");
+      return;
+    }
 
+    if (!roomId.trim()) {
+      console.error("Room ID cannot be empty");
+      return;
+    }
+
+    if (!isConnected) {
+      console.error("Socket not connected");
+      return;
+    }
+
+    const request = {
+      type: "join-room",
+      roomId: roomId,
+      playerId: username,
+    };
+
+    send(request);
   }
 
   return (
@@ -34,10 +74,10 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
             <label className="text-gray-200 text-sm mb-2">Room Code</label>
             <input
               type="text"
-              id="roomCode"
+              id="roomId"
               placeholder="Enter room code"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value)}
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
               className="border border-gray-700 rounded bg-gray-900 text-white px-3 py-1"
             />
           </div>

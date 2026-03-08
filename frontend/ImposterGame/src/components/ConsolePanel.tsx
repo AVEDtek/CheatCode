@@ -14,7 +14,7 @@ type ConsolePanelProps = {
 export default function ConsolePanel({ height, onResize }: ConsolePanelProps) {
     const [highlightedCard, setHighlightedCard] = useState(0);
 
-    const { problemTests } = useGame();
+    const { testCycle } = useGame();
 
     const [isResizing, setIsResizing] = useState(false);
 

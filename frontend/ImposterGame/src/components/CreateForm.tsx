@@ -1,14 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSocket } from "../contexts/SocketContext.tsx";
 
 type CreateFormProps = {
   onCancelCreateClick: () => void;
 };
 
 export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
+  const { isConnected, send, onMessage } = useSocket();
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
 
-  function onCreateClick() {
+  useEffect(() => {
+    const unsubRoom = onMessage("room-created", (data) => {
+      navigate("/Lobby", {
+        state: {
+          roomId: data.roomId,
+          username: username,
+          players: [username],
+        },
+      });
+    });
 
+    return () => unsubRoom();
+  }, [onMessage, navigate, username]);
+
+  function onCreateClick() {
+    if (!username.trim()) {
+      console.error("Username cannot be empty");
+      return;
+    }
+
+    if (!isConnected) {
+      console.error("Socket not connected");
+      return;
+    }
+
+    const request = {
+      type: "create-room",
+      playerId: username,
+    };
+
+    send(request);
   }
 
   return (
@@ -21,7 +55,7 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
             <label className="text-gray-200 text-sm mb-2">Username</label>
             <input
               type="text"
-              id="joinCode"
+              id="username"
               placeholder="Enter username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
