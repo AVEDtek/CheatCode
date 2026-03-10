@@ -8,7 +8,7 @@ import {
 import { useSocket } from "./SocketContext";
 import { useRoom } from "./RoomContext";
 
-const GameState = {
+export const GameState = {
     Coding: "coding",
     Voting: "voting",
     Results: "results"

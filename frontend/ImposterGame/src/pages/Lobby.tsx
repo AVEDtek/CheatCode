@@ -59,7 +59,7 @@ export default function Lobby() {
     await navigator.clipboard.writeText(roomId);
   }
 
-  async function startGame() {
+  async function onStartGameClick() {
     if (!isConnected) {
       console.error("Socket not connected");
       return;
@@ -106,7 +106,7 @@ export default function Lobby() {
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => startGame()}
+                onClick={() => onStartGameClick()}
                 className="cursor-pointer w-30 m-7 p-3 mt-10 rounded-xl font-bold text-sm text-gray-200 bg-purple-700 hover:bg-purple-600 transition-colors duration-300">
                 Start Game
               </button>

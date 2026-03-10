@@ -17,19 +17,23 @@ export default function ProblemPanel() {
                     {problem.description}
                     <br />
                     <br />
-                    <strong className="text-gray-300">Examples:</strong>
                     {problem.examples.map((example, index) => (
-                        <div key={index} className="bg-gray-900 p-3 m-2 rounded-xl">
-                            {example}
+                        <div key={index} >
+                            <strong className="text-gray-300">Example {index + 1}:</strong>
+                            <div className="bg-gray-900 p-3 m-2 rounded-xl">
+                                {example}
+                            </div>
                         </div>
                     ))}
                     <br />
-                    <strong className="text-gray-300">Constraints:</strong>
-                    {problem.constraints.map((constraint, index) => (
-                        <div key={index} className="bg-gray-900 p-3 m-2 rounded-xl">
-                            {constraint}
-                        </div>
-                    ))}
+                    <ul className="list-disc">
+                        <strong className="text-gray-300">Constraints:</strong>
+                        {problem.constraints.map((constraint, index) => (
+                            <li key={index} className="m-2 ml-7 text-gray-400">
+                                {constraint}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         </>

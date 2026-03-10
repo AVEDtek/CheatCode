@@ -13,7 +13,7 @@ export default function Welcome() {
 
     return (
         <>
-            <div className="h-screen bg-gray-950">
+            <div className="h-screen bg-gray-950 flex flex-col">
                 <div className="flex justify-between">
                     <button
                         type="button"
@@ -28,28 +28,29 @@ export default function Welcome() {
                         <Github size={24} />
                     </a>
                 </div>
-                <header className="flex text-gray-200 text-4xl font-extrabold justify-center mt-60">
-                    <h1 className="text-purple-700">
-                        Cheet
-                        <strong className="text-white">Code</strong>
-                    </h1>
-                </header>
+                <div className="flex-1 flex flex-col items-center justify-center">
+                    <header className="text-gray-200 text-4xl font-extrabold">
+                        <h1 className="text-purple-700">
+                            Cheet
+                            <strong className="text-white">Code</strong>
+                        </h1>
+                    </header>
 
-                <div className="flex justify-center">
-                    <button
-                        type="button"
-                        onClick={() => setIsJoinOpen(true)}
-                        className="cursor-pointer w-30 m-2 p-3 mt-10 rounded-xl font-bold text-sm text-gray-200 bg-purple-700 hover:bg-purple-600 transition-colors duration-300">
-                        Join Room
-                    </button>
+                    <div className="flex mt-10">
+                        <button
+                            type="button"
+                            onClick={() => setIsJoinOpen(true)}
+                            className="cursor-pointer w-30 m-2 p-3 rounded-xl font-bold text-sm text-gray-200 bg-purple-700 hover:bg-purple-600 transition-colors duration-300">
+                            Join Room
+                        </button>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsCreateOpen(true)}
-                        className="cursor-pointer w-30 m-2 p-3 mt-10 rounded-xl font-bold text-sm text-gray-200 bg-purple-700 hover:bg-purple-600 transition-colors duration-300">
-                        Create Room
-                    </button>
-
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateOpen(true)}
+                            className="cursor-pointer w-30 m-2 p-3 rounded-xl font-bold text-sm text-gray-200 bg-purple-700 hover:bg-purple-600 transition-colors duration-300">
+                            Create Room
+                        </button>
+                    </div>
                 </div>
             </div>
             {isJoinOpen && <JoinForm onCancelJoinClick={() => setIsJoinOpen(false)} />}

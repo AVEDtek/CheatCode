@@ -170,7 +170,7 @@ class Game:
         self.state = GameState.VOTING
         self.add_commit(player_id, code)
         await asyncio.create_task(self.stop_timer())
-        self.timer_task = asyncio.create_task(self.start_timer(120))
+        self.timer_task = asyncio.create_task(self.start_timer(20))
 
     def set_results(self):
         self.state = GameState.RESULTS

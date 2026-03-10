@@ -8,8 +8,11 @@ import SideBar from "../components/SideBar.tsx";
 import VoteSideBar from "../components/VoteSideBar.tsx";
 import ProblemPanel from "../components/ProblemPanel.tsx";
 import ImposterPanel from "../components/ImposterPanel.tsx";
+import ResultsPanel from "../components/ResultsPanel.tsx";
 import EditorPanel from "../components/EditorPanel.tsx";
 import CommitPanel from "../components/CommitPanel.tsx";
+
+import { GameState } from "../contexts/GameContext.tsx";
 
 type GameLocationState = {
     players: string[];
@@ -56,16 +59,22 @@ export default function Game() {
                         <strong className="text-white">Code</strong>
                     </h1>
                 </div>
-                {gameState === "coding" &&
+                {gameState === GameState.Coding &&
                     (<div className="flex flex-1">
                         <SideBar />
                         {username === imposter ? <ImposterPanel /> : <ProblemPanel />}
                         <EditorPanel />
                     </div>)}
-                {gameState === "voting" &&
+                {gameState === GameState.Voting &&
                     (<div className="flex flex-1">
-                        <VoteSideBar />
+                        <VoteSideBar voting={true} />
                         {username === imposter ? <ImposterPanel /> : <ProblemPanel />}
+                        <CommitPanel />
+                    </div>)}
+                {gameState === GameState.Results &&
+                    (<div className="flex flex-1">
+                        <VoteSideBar voting={false} />
+                        <ResultsPanel />
                         <CommitPanel />
                     </div>)}
             </div >
