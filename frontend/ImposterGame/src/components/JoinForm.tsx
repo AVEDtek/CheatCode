@@ -57,7 +57,7 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
   return (
     <>
       <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
-        <form className="bg-gray-900 rounded-lg border border-gray-700 w-100 h-75" autoComplete="off">
+        <form className="bg-brand-gray rounded-lg border border-gray-700 w-100 h-72" autoComplete="off">
           <h1 className="text-white text-l font-bold m-5">Join Room</h1>
 
           <div className="flex flex-col m-5">
@@ -68,7 +68,7 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
               placeholder="Enter username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="border border-gray-700 rounded bg-gray-900 text-white px-3 py-1"
+              className="border border-gray-700 rounded bg-brand-gray-light text-white px-3 py-1"
             />
           </div>
 
@@ -80,7 +80,7 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
               placeholder="Enter room code"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
-              className="border border-gray-700 rounded bg-gray-900 text-white px-3 py-1"
+              className="border border-gray-700 rounded bg-brand-gray-light text-white px-3 py-1"
             />
           </div>
 

@@ -12,7 +12,7 @@ export default function VoteUserCard({ username, votes, selected, handleCardClic
         <>
             <div
                 onClick={() => handleCardClick(username)}
-                className={`flex items-center cursor-pointer text-white mr-5 mt-3 p-3 rounded-r-xl transition-colors duration-300 ${selected ? "bg-purple-700" : "bg-gray-800"} ${selected ? "hover:bg-purple-600" : "hover:bg-gray-700"}
+                className={`flex items-center cursor-pointer text-white mr-5 mb-3 p-3 rounded-r-xl transition-colors duration-300 ${selected ? "bg-purple-700" : "bg-brand-gray-light"} ${selected ? "hover:bg-purple-600" : "hover:bg-gray-700"}
                     }`}
             >
                 <User className="mr-3" />

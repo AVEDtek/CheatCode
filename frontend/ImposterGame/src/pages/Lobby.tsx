@@ -74,17 +74,17 @@ export default function Lobby() {
 
   return (
     <>
-      <div className="h-screen bg-gray-950">
+      <div className="min-h-screen bg-brand-black">
         <div className="flex">
           <h1 className="text-purple-700 text-xl font-bold m-5">
             Cheet
             <strong className="text-white">Code</strong>
           </h1>
         </div>
-        <div className="flex flex-1">
-          <div className="w-[25%]">
+        <div className="flex flex-1 items-stretch justify-center">
+          <div className="flex-1">
           </div>
-          <div className="w-[30%] border-2 border-gray-700 text-gray-200 rounded-xl m-1 bg-gray-900 my-10 h-[500px]">
+          <div className="w-[30%] min-w-[270px] border-2 border-gray-700 text-gray-200 rounded-xl m-1 bg-brand-gray my-10 h-auto min-h-[70vh]">
             <h1 className="text-gray-200 font-bold m-7 text-2xl">
               Players
             </h1>
@@ -94,7 +94,7 @@ export default function Lobby() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col justify-between w-[20%] border-2 border-gray-700 text-gray-200 rounded-xl m-1 bg-gray-900 my-10 h-[500px]">
+          <div className="flex flex-col justify-between w-[20%] min-w-[180px] border-2 border-gray-700 text-gray-200 rounded-xl m-1 bg-brand-gray my-10 h-auto min-h-[70vh]">
             <div className="flex items-center gap-2 mx-7 mt-7">
               <h1 className="text-gray-300 font-bold text-xl">
                 Room Code:
@@ -112,7 +112,7 @@ export default function Lobby() {
               </button>
             </div>
           </div>
-          <div className="w-[25%]">
+          <div className="flex-1">
           </div>
         </div>
       </div>

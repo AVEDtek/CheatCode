@@ -9,7 +9,7 @@ export default function ImposterPanel() {
 
     return (
         <>
-            <div className="w-[35%] bg-gray-950 rounded-xl my-3 border-2 border-gray-700">
+            <div className="w-[35%] min-w-[315px] max-h-[85vh] bg-brand-gray rounded-xl my-3 border-2 border-gray-700">
                 <h1 className="flex text-gray-200 font-bold m-7 text-2xl">
                     You are the&nbsp; <strong className="text-red-700"> Imposter </strong>
                 </h1>
@@ -19,7 +19,7 @@ export default function ImposterPanel() {
                     <br />
                     <br />
                     <strong className="text-gray-300">Hint:</strong>
-                    <div className="bg-gray-900 p-3 m-2 rounded-xl">
+                    <div className="bg-brand-gray-light p-3 m-2 rounded-xl">
                         {problem.topics.map((topic, index) => (
                             <div key={index}>
                                 {topic}

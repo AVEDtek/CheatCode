@@ -15,7 +15,7 @@ export default function EditorPanel() {
     const { currentPlayer, code, setCode } = useGame();
 
     const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
-    const [editorHeight, setEditorHeight] = useState<number>(600);
+    const [editorHeight, setEditorHeight] = useState<number>(75);
     const [consoleHeight, setConsoleHeight] = useState<number>(0);
 
     const handleEditorChange = (code: string | undefined) => {
@@ -44,28 +44,28 @@ export default function EditorPanel() {
     const toggleConsole = () => {
         if (!isConsoleOpen) {
             setIsConsoleOpen(true);
-            setEditorHeight(400);
-            setConsoleHeight(200);
+            setEditorHeight(50);
+            setConsoleHeight(25);
         } else {
             setIsConsoleOpen(false);
-            setEditorHeight(600);
+            setEditorHeight(75);
             setConsoleHeight(0);
         }
     };
 
     const handleConsoleResize = (newHeight: number) => {
         setConsoleHeight(newHeight);
-        setEditorHeight(600 - newHeight);
+        setEditorHeight(75 - newHeight);
     };
 
     return (
         <>
-            <div className="w-[50%] rounded-xl bg-gray-950 border-2 border-gray-700 m-3">
+            <div className="w-[50%] min-w-[450px] max-h-[85vh] rounded-xl bg-brand-gray border-2 border-gray-700 m-3 flex flex-col flex-1">
                 <div className="border-b-2 border-gray-700 h-5"></div>
                 {currentPlayer === username ? (
                     <div>
                         <Editor
-                            height={`${editorHeight}px`}
+                            height={`${editorHeight}vh`}
                             width="100%"
                             defaultLanguage="python"
                             defaultValue="// Start coding..."
@@ -78,7 +78,7 @@ export default function EditorPanel() {
                             isOpen={isConsoleOpen}
                             onResize={handleConsoleResize}
                         />
-                        <div className="flex justify-between border-t-2 border-gray-700">
+                        <div className="flex justify-between border-t-2 border-gray-700 h-[60px] bg-brand-gray">
                             <div
                                 className="text-gray-400 m-3 p-1 rounded-xl cursor-pointer hover:bg-gray-800"
                                 onClick={toggleConsole}
@@ -99,14 +99,14 @@ export default function EditorPanel() {
                         </div>
                     </div>
                 ) : (
-                    <div>
-                        <div className="flex text-center items-center h-[600px] text-gray-500 text-lg bg-gray-900">
-                            <div className="m-50">
+                    <div className="flex flex-1 flex-col bg-brand-gray">
+                        <div className="flex flex-1 items-center justify-center text-center text-gray-500 text-lg bg-brand-gray-light">
+                            <div className="m-10">
                                 It’s {currentPlayer}’s turn. Sit tight and see
                                 what they write...
                             </div>
                         </div>
-                        <div className="flex justify-end border-t-2 border-gray-700 h-15"></div>
+                        <div className="flex h-15 shrink-0 justify-end border-t-2 border-gray-700 bg-brand-gray"></div>
                     </div>
                 )}
             </div>

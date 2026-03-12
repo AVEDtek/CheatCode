@@ -41,7 +41,8 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
 
     const handleMouseMove = (e: MouseEvent) => {
         if (isResizing) {
-            const newHeight = Math.min(500, Math.max(100, height - e.movementY));
+            const deltaVh = (e.movementY / window.innerHeight) * 100;
+            const newHeight = Math.min(45, Math.max(5, height - deltaVh));
             onResize(newHeight);
         }
     };
@@ -68,8 +69,8 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
     return (
         <>
             <div
-                className={`bg-gray-950 text-gray-200 border-gray-700 overflow-y-auto custom-scrollbar ${isOpen ? "border-t-2" : "border-0"}`}
-                style={{ height: `${height}px` }}
+                className={`bg-brand-gray text-gray-200 border-gray-700 overflow-y-auto custom-scrollbar ${isOpen ? "border-t-2" : "border-0"}`}
+                style={{ height: `${height}vh` }}
             >
                 <div
                     className="flex justify-center cursor-row-resize h-1"
@@ -82,7 +83,7 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
                     Test Cases
                 </div>
                 <div className="flex">
-                    {testCycle.map((test, index) => (
+                    {testCycle.map((_, index) => (
                         <div key={index}>
                             {passed.length > 0 ?
                                 <TestCard index={index} passed={passed[index]} highlight={index === highlightedCard} handleCardClick={handleCardClick} /> :
@@ -92,7 +93,7 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
                 </div>
                 <div className="m-5">
                     <strong className="text-gray-300">Input:</strong>
-                    <div className="bg-gray-900 p-3 rounded-xl mt-2">
+                    <div className="bg-brand-gray-light p-3 rounded-xl mt-2 h-12">
                         {Object.entries(testCycle[highlightedCard].input)
                             .map(([key, value]) => `${key}: ${JSON.stringify(value, null, 2)}`)
                             .join(", ")}
@@ -101,14 +102,14 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
 
                 <div className="m-5">
                     <strong className="text-gray-300">Output:</strong>
-                    <div className="bg-gray-900 p-3 rounded-xl mt-2">
+                    <div className="bg-brand-gray-light p-3 rounded-xl mt-2 h-12">
                         {JSON.stringify(outputs[highlightedCard], null, 2)}
                     </div>
                 </div>
 
                 <div className="m-5">
                     <strong className="text-gray-300">Expected result:</strong>
-                    <div className="bg-gray-900 p-3 rounded-xl mt-2">
+                    <div className="bg-brand-gray-light p-3 rounded-xl mt-2 h-12">
                         {JSON.stringify(testCycle[highlightedCard].expected, null, 2)}
                     </div>
                 </div>

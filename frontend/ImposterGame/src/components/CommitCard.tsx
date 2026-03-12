@@ -14,9 +14,9 @@ export default function CommitCard({ index, username, isFirst, isLast, selected,
         <>
             <div
                 onClick={() => handleCommitClick(index)}
-                className={`flex items-center w-60 h-15 border-x-2 border-t-2 border-gray-700 text-sm cursor-pointer transition-colors duration-300
-                    ${selected ? "bg-purple-700" : "bg-gray-900"}
-                    ${selected ? "hover:bg-purple-600" : "hover:bg-gray-800"}
+                className={`flex w-full items-center h-15 border-x-2 border-t-2 border-gray-700 text-sm cursor-pointer transition-colors duration-300
+                    ${selected ? "bg-purple-700" : "bg-brand-gray"}
+                    ${selected ? "hover:bg-purple-600" : "hover:bg-brand-gray-light"}
                     ${isFirst ? "rounded-t-md" : "rounded-t-none"}
                     ${isLast ? "rounded-b-md" : "rounded-b-none"}
                     ${isLast ? "border-b-2" : "border-b-none"}`}

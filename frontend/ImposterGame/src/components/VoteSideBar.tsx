@@ -44,7 +44,7 @@ export default function VoteBar({ voting }: VoteBarProps) {
 
     return (
         <>
-            <div className="flex flex-col justify-between w-[15%] bg-gray-900 my-3 mr-10 border-y-2 border-r-2 border-gray-700 rounded-r-xl">
+            <div className="flex flex-col justify-between w-[15%] min-w-[135px] shrink-0 self-start h-fit bg-brand-gray my-3 mr-10 border-y-2 border-r-2 border-gray-700 rounded-r-xl min-h-[85vh]">
                 <div>
                     <div className="text-gray-400 m-5 text-sm mb-10 ">
                         {voting ? (

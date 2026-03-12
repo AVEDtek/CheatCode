@@ -11,7 +11,7 @@ export default function TestCard({ index, passed, highlight, handleCardClick }: 
     return (
         <>
             <div
-                className={`flex justify-center text-gray-300 m-3 py-2 px-5 rounded-xl cursor-pointer w-30 transition-colors duration-300 ${highlight ? "bg-gray-800" : "bg-gray-950"} ${highlight ? "hover:bg-gray-800" : "hover:bg-gray-900"}`}
+                className={`flex justify-center text-gray-300 m-3 py-2 px-5 rounded-xl cursor-pointer w-30 transition-colors duration-300 ${highlight ? "bg-brand-gray-light" : "bg-brand-gray"} hover:bg-brand-gray-light`}
                 onClick={() => handleCardClick(index)}
             >
                 {passed !== undefined ? (passed ? <Check className="inline-block mr-2 text-green-500" /> : <X className="inline-block mr-2 text-red-500" />) : null}

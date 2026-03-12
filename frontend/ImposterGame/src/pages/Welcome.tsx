@@ -13,7 +13,7 @@ export default function Welcome() {
 
     return (
         <>
-            <div className="h-screen bg-gray-950 flex flex-col">
+            <div className="h-screen bg-brand-black flex flex-col">
                 <div className="flex justify-between">
                     <button
                         type="button"
