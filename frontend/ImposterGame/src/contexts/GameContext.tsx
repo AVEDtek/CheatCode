@@ -29,6 +29,8 @@ type GameContextValue = {
     setCurrentPlayer: React.Dispatch<React.SetStateAction<string>>;
     imposter: string;
     setImposter: React.Dispatch<React.SetStateAction<string>>;
+    chat: any[];
+    setChat: React.Dispatch<React.SetStateAction<any[]>>;
     problem: any;
     setProblem: React.Dispatch<React.SetStateAction<any>>;
     testCycle: any[];
@@ -56,6 +58,8 @@ const GameContext = createContext<GameContextValue>({
     setCurrentPlayer: (_currentPlayer: React.SetStateAction<string>) => { },
     imposter: "",
     setImposter: (_imposter: React.SetStateAction<string>) => { },
+    chat: [],
+    setChat: (_chat: React.SetStateAction<any[]>) => { },
     problem: null,
     setProblem: (_problem: React.SetStateAction<any>) => { },
     testCycle: [],
@@ -83,6 +87,8 @@ export default function GameProvider({ children }: GameProviderProps) {
     const [currentPlayer, setCurrentPlayer] = useState<string>("");
     const [imposter, setImposter] = useState<string>("");
 
+    const [chat, setChat] = useState<any[]>([]);
+
     const [problem, setProblem] = useState<any>(null);
     const [testCycle, setTestCycle] = useState<any[]>([]);
     const [code, setCode] = useState<string>("");
@@ -109,6 +115,9 @@ export default function GameProvider({ children }: GameProviderProps) {
             setCurrentPlayer(data.currentPlayer);
             setCode(data.code);
         });
+        const unsubChatUpdate = onMessage("chat-update", (data) => {
+            setChat(data.chat);
+        });
         const unsubStartVote = onMessage("start-vote", (data) => {
             setGameState(GameState.Voting);
             setCommits(data.commits);
@@ -125,6 +134,7 @@ export default function GameProvider({ children }: GameProviderProps) {
             unsubTimeLeft();
             unsubTurnOver();
             unsubNextTurn();
+            unsubChatUpdate();
             unsubStartVote();
             unsubVoteCasted();
             unsubVoteOver();
@@ -142,6 +152,8 @@ export default function GameProvider({ children }: GameProviderProps) {
         setCurrentPlayer,
         imposter,
         setImposter,
+        chat,
+        setChat,
         problem,
         setProblem,
         testCycle,

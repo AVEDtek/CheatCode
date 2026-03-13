@@ -158,6 +158,7 @@ async def handler(websocket):
                     "type": "game-started",
                     "playerList": game.get_player_ids(),
                     "imposterId": game.get_imposter_id(),
+                    "chat": game.get_chat(),
                     "problem": problem,
                     "testCycle": test_cycle
                 }
@@ -196,6 +197,42 @@ async def handler(websocket):
                     "type": "next-turn",
                     "currentPlayer": game.players[game.current_player_idx].id,
                     "code": code
+                }
+                await room.broadcast(response)
+
+            elif msg_type == "send-message":
+                try:
+                    room_id = data["roomId"]
+                except KeyError:
+                    await websocket.send("Missing room ID")
+                    continue
+                try:
+                    player_id = data["playerId"]
+                except KeyError:
+                    await websocket.send("Missing player ID")
+                    continue
+                try:
+                    message = data["message"]
+                except KeyError:
+                    await websocket.send("Missing message")
+                    continue
+                try:
+                    timestamp = data["timestamp"]
+                except KeyError:
+                    await websocket.send("Missing timestamp")
+                    continue
+
+                if not room_manager.room_exists(room_id):
+                    await websocket.send("No room found: " + room_id)
+                    continue
+                
+                room = room_manager.get_room(room_id)
+                game = room.get_game()
+                game.addMessage(player_id, message, timestamp)
+
+                response = {
+                    "type": "chat-update",
+                    "chat": game.get_chat()
                 }
                 await room.broadcast(response)
             

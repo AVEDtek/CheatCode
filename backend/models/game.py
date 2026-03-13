@@ -13,14 +13,19 @@ class GameState(str, Enum):
     RESULTS = "results"
 
 class Problem(TypedDict):
-        id: int
-        title: str
-        difficulty: str
-        description: str
-        examples: list
-        constraints: list
-        topics: list
-        code: str
+    id: int
+    title: str
+    difficulty: str
+    description: str
+    examples: list
+    constraints: list
+    topics: list
+    code: str
+
+class Message(TypedDict):
+    sender: str
+    message: str
+    timestamp: float
 
 class TestCycle(TypedDict):
     input: dict
@@ -43,6 +48,8 @@ class Game:
         self.assign_imposter()
         self.current_player_idx = 0
 
+        self.chat = []
+        self.load_chat()
         self.commits = []
 
         self.problem, self.test_cycle = self.load_random_problem_and_test_cycle()
@@ -51,6 +58,9 @@ class Game:
     def assign_imposter(self):
         imposter = random.choice(self.players)
         imposter.set_imposter()
+
+    def load_chat(self):
+        self.addMessage("System", "Chatroom is open. Keep your clues subtle.", time.time())
     
     def load_random_problem_and_test_cycle(self):
         file_path = 'backend/data/problems.json'
@@ -84,7 +94,7 @@ class Game:
             "code": problem["code"]
         }
         test_cycle_obj: TestCycle = problem["testCycle"]
-        self.add_commit("SYSTEM", problem["code"])
+        self.add_commit("System", problem["code"])
         return problem_obj, test_cycle_obj
 
     def add_commit(self, player_id, code):
@@ -93,6 +103,14 @@ class Game:
             "code": code
         }
         self.commits.append(commit)
+
+    def addMessage(self, sender, message, timestamp):
+        msg: Message = {
+            "sender": sender,
+            "message": message,
+            "timestamp": timestamp
+        }
+        self.chat.append(msg)
 
     def run_tests(self, code):
         return self.test_runner.run_tests(code)
@@ -181,6 +199,9 @@ class Game:
             if player.role == "imposter":
                 return player.id
         return None
+
+    def get_chat(self):
+        return self.chat
     
     def get_problem(self):
         return self.problem

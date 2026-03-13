@@ -1,4 +1,3 @@
-import { useRoom } from "../contexts/RoomContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
 
 import { useEffect } from "react";
@@ -7,7 +6,6 @@ import { useLocation } from "react-router-dom";
 import SideBar from "../components/SideBar.tsx";
 import VoteSideBar from "../components/VoteSideBar.tsx";
 import ProblemPanel from "../components/ProblemPanel.tsx";
-import ImposterPanel from "../components/ImposterPanel.tsx";
 import ResultsPanel from "../components/ResultsPanel.tsx";
 import EditorPanel from "../components/EditorPanel.tsx";
 import CommitPanel from "../components/CommitPanel.tsx";
@@ -18,20 +16,19 @@ type GameLocationState = {
     players: string[];
     currentPlayer: string;
     imposter: string;
+    chat: any[];
     problem: any;
-    testCycle: any;
+    testCycle: any[];
     code: string;
 };
 
 export default function Game() {
-    const { username } = useRoom();
-
     const {
         gameState,
         setPlayers,
         setCurrentPlayer,
-        imposter,
         setImposter,
+        setChat,
         setProblem,
         setTestCycle,
         setCode
@@ -44,6 +41,7 @@ export default function Game() {
         setPlayers(navState.players);
         setCurrentPlayer(navState.currentPlayer);
         setImposter(navState.imposter);
+        setChat(navState.chat);
         setProblem(navState.problem);
         setTestCycle(navState.testCycle);
         setCode(navState.code);
@@ -62,13 +60,13 @@ export default function Game() {
                 {gameState === GameState.Coding &&
                     (<div className="flex min-h-0 flex-1 items-stretch">
                         <SideBar />
-                        {username === imposter ? <ImposterPanel /> : <ProblemPanel />}
+                        <ProblemPanel />
                         <EditorPanel />
                     </div>)}
                 {gameState === GameState.Voting &&
                     (<div className="flex min-h-0 flex-1 items-stretch">
                         <VoteSideBar voting={true} />
-                        {username === imposter ? <ImposterPanel /> : <ProblemPanel />}
+                        <ProblemPanel />
                         <CommitPanel />
                     </div>)}
                 {gameState === GameState.Results &&

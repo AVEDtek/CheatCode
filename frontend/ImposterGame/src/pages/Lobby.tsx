@@ -38,6 +38,7 @@ export default function Lobby() {
           players: data.playerList,
           currentPlayer: data.playerList[0],
           imposter: data.imposterId,
+          chat: data.chat,
           problem: data.problem,
           testCycle: data.testCycle,
           code: data.problem["code"]

@@ -29,8 +29,17 @@ Frontend -> Backend:
     Response: game-started
         playerList
         imposterId
+        chat
         problem
         testCycle
+
+    Request: send-message:
+        roomId
+        playerId
+        message
+        timestamp
+    Response: chat-update
+        chat
 
     Request: run-test-cycle
         roomId
