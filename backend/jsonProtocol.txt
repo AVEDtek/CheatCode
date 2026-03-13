@@ -1,0 +1,89 @@
+Definitions for all JSON messages sent between Frontend and Backend and fields they include
+
+Each JSON message starts with a 'type' field defining the purpose of the request/message
+For example, a request to create a room would have 'type' : 'create-room' 
+
+Frontend -> Backend:
+    Request: create-room
+        playerId
+    Response: room-created
+        roomId
+        playerId
+
+    Request: join-room
+        roomId
+        playerId
+    Response: room-joined
+        roomId
+        playerId
+        playerList
+    Response: unable-to-join
+        errorMessage
+
+    Message: leave-room
+        roomId
+        playerId
+
+    Request: start-game
+        roomId
+    Response: game-started
+        playerList
+        imposterId
+        chat
+        problem
+        testCycle
+
+    Request: send-message:
+        roomId
+        playerId
+        message
+        timestamp
+    Response: chat-update
+        chat
+
+    Request: run-test-cycle
+        roomId
+        playerId
+        code 
+    Response: test-results # if not all tests passed
+        error
+        outputList
+        passedList
+    Response: start-vote # if all tests passed
+        commits
+        votes
+        chat
+
+    Request: next-turn
+        roomId
+        playerId
+        code
+    Response: next-turn
+        currentPlayer
+        code
+        chat
+
+    Request: cast-vote
+        roomId
+        playerId
+    Response: vote-casted
+        votes
+        chat
+
+Backend -> Frontend
+    Message: room-players-update
+        playerList
+
+    Message: game-players-update
+        playerList
+        currentPlayer
+        chat
+
+    Message: time-left
+        timeLeft
+
+    Message: turn-over
+
+    Message: vote-over
+        votedList
+        votedCorrectly

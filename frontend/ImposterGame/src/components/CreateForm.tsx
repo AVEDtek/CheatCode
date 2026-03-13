@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { useWS } from "../contexts/WebSocketContext";
+import { useSocket } from "../contexts/SocketContext.tsx";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 type CreateFormProps = {
@@ -7,102 +8,87 @@ type CreateFormProps = {
 };
 
 export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
-  const { send, connected, lastMessage } = useWS();
-  const [roomId, setRoomId] = useState<string | null>(null);
-  // removed: const [gameStarted, setGameStarted] = useState(false);
-
-  const [name, setName] = useState("Player" + Math.floor(Math.random() * 1000));
-  const pollingRef = useRef<number | null>(null);
-  const [waitingForCreate, setWaitingForCreate] = useState(false);
+  const {
+    isConnected,
+    send,
+    onMessage
+  } = useSocket();
 
   const navigate = useNavigate();
 
-  // handle incoming messages from the server
+  const [username, setUsername] = useState<string>("");
+
   useEffect(() => {
-    if (!lastMessage) return;
+    const unsubRoomCreate = onMessage("room-created", (data) => {
+      navigate("/Lobby", {
+        state: {
+          roomId: data.roomId,
+          username: data.playerId,
+          players: [data.playerId],
+        },
+      });
+    });
 
-    try {
-      console.log("[CreateForm] Received WS message:", lastMessage);
-    } catch (e) {
-      console.log("[CreateForm] Received WS message (unserializable):", lastMessage);
+    return () => unsubRoomCreate();
+  }, [onMessage, navigate, username]);
+
+  function onCreateClick() {
+    if (!username.trim()) {
+      console.error("Username cannot be empty");
+      return;
     }
-
-    if (typeof lastMessage === "object") {
-      const t = lastMessage.type;
-      if (t === "room-created") {
-        const rid = lastMessage.roomid ?? lastMessage.roomId ?? null;
-        if (rid) {
-          setRoomId(rid);
-          // If we issued the create request from this component, navigate now
-          if (waitingForCreate) {
-            setWaitingForCreate(false);
-            // include player's name so Lobby can highlight it
-            navigate(
-              `/GameRoom/lobby?roomid=${encodeURIComponent(rid)}&player=${encodeURIComponent(name)}`
-            );
-          }
-        }
-      }
-      // removed handling for "game-started" since this component doesn't need to track it
+    if (!isConnected) {
+      console.error("Socket not connected");
+      return;
     }
-  }, [lastMessage, waitingForCreate, navigate]);
-
-  // (existing polling effect is fine if you keep it)
-  useEffect(() => {
-    if (!roomId) return;
-    const ask = () => {
-      if (connected && roomId) send({ type: "request-list", roomid: roomId });
+    const request = {
+      type: "create-room",
+      playerId: username,
     };
-    ask();
-    pollingRef.current = window.setInterval(ask, 2000);
-    return () => {
-      if (pollingRef.current) {
-        window.clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    };
-  }, [roomId, connected, send]);
-
-  function onCreateRoom() {
-    // include both playerid and name; wait for reply before navigating
-    send({ type: "create-room", playerid: name, name });
-    setWaitingForCreate(true);
+    send(request);
   }
+
+  const canCreate = username.trim() !== "";
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
-        <form className="bg-gray-900 rounded-lg border border-gray-700 w-100 h-50">
-          <h1 className="text-purple-700 text-l font-bold m-5">Create Room</h1>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center">
+        <form className="bg-brand-gray rounded-2xl border border-gray-700 w-96 flex flex-col gap-6 p-7 shadow-xl" autoComplete="off">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-1 h-5 bg-purple-600 rounded-full" />
+              <h1 className="text-gray-100 text-lg font-bold">Create Room</h1>
+            </div>
+            <p className="text-gray-500 text-xs">You'll be the host. Share the room code to invite others.</p>
+          </div>
 
-          <div className="flex flex-col m-5">
-            <label className="text-gray-200 text-sm mb-2">Username</label>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="username" className="text-gray-400 text-xs uppercase tracking-widest font-semibold">Username</label>
             <input
               type="text"
-              id="joinCode"
-              placeholder="Enter username"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="border rounded bg-gray-900 text-white px-3 py-1"
+              id="username"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="border border-gray-700 rounded-xl bg-brand-gray-light text-gray-100 placeholder-gray-600 px-4 py-2.5 text-sm outline-none focus:border-purple-600 transition-colors duration-200"
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onCancelCreateClick}
-              className="cursor-pointer w-20 p-3 m-2 rounded-xl font-bold text-xs text-gray-200 bg-gray-800 hover:bg-gray-700 transition-colors duration-300"
+              className="cursor-pointer flex-1 py-2.5 rounded-xl font-bold text-sm text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-gray-200 transition-all duration-200 active:scale-95"
             >
               Cancel
             </button>
-
             <button
               type="button"
-              onClick={onCreateRoom}
-              disabled={!connected || waitingForCreate}
-              className="cursor-pointer w-20 p-3 m-2 rounded-xl font-bold text-xs text-gray-200 bg-purple-950 hover:bg-purple-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={onCreateClick}
+              className={`cursor-pointer flex-1 py-2.5 rounded-xl font-bold text-sm text-white bg-purple-700 ${canCreate ? "hover:bg-purple-600 active:scale-95" : ""} transition-all duration-200 disabled:opacity-40 disabled:cursor-default`}
+              disabled={!canCreate}
             >
-              {waitingForCreate ? "Creating..." : "Create"}
+              Create Room
             </button>
           </div>
         </form>

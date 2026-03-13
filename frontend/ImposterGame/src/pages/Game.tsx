@@ -1,190 +1,95 @@
-import Editor from "@monaco-editor/react";
+import { useGame } from "../contexts/GameContext.tsx";
+
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
 import SideBar from "../components/SideBar.tsx";
 import VoteSideBar from "../components/VoteSideBar.tsx";
 import ProblemPanel from "../components/ProblemPanel.tsx";
-import ImposterPanel from "../components/ImposterPanel.tsx";
-import VersionPanel from "../components/VersionPanel.tsx";
 import ResultsPanel from "../components/ResultsPanel.tsx";
-import { useNavigate } from "react-router-dom";
-import { useWS } from "../contexts/WebSocketContext";
+import EditorPanel from "../components/EditorPanel.tsx";
+import CommitPanel from "../components/CommitPanel.tsx";
 
-import { useLocation } from "react-router-dom";
+import { GameState } from "../contexts/GameContext.tsx";
 
-import { useState, useEffect, use } from "react";
+type GameLocationState = {
+    players: string[];
+    currentPlayer: string;
+    imposter: string;
+    chat: any[];
+    problem: any;
+    testCycle: any[];
+    code: string;
+};
 
 export default function Game() {
-    type Phase = "coding" | "voting" | "results"
-    const { send, connected, lastMessage, error } = useWS();
-    const [phase, setPhase] = useState<Phase>("coding");
+    const {
+        gameState,
+        setPlayers,
+        setCurrentPlayer,
+        setImposter,
+        setChat,
+        setProblem,
+        setTestCycle,
+        setCode
+    } = useGame();
 
-    const [roundActive, setRoundActive] = useState<boolean>(true);
-
-    const [roomId, setRoomId] = useState<string>("");
-    const [usernames, setUsernames] = useState<string[]>([]);
-    const [currentUser, setCurrentUser] = useState<string>("");
-    // TODO: Add call to imposter here
-    const [imposterId, setImposterId] = useState<string>("");
-    // TODO: Add call to current user here
-    const [highlightedUser, setHighlightedUser] = useState<string>("");
-    const [highlightedCommit, setHighlightedCommit] = useState<number>(-1);
-    const [code, setCode] = useState("// Start coding...");
-
-    const [time, setTime] = useState<number>(1);
-
-    //TODO : Add call to socket for problem info here
-    const [title, setTitle] = useState<string>("");
-    const [description, setDescription] = useState<string>("");
-    const [examples, setExamples] = useState<string[]>([]);
-    // const [constraints] = useState<string[]>([]);
-
-    const navigate = useNavigate();
     const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const id = params.get("roomid") ?? "";
-    const playerName = params.get("player") ?? "";
-
-    const [commits, setCommits] = useState<[]>([]);
+    const navState = location.state as GameLocationState;
 
     useEffect(() => {
-        setRoomId(id);
-        setCurrentUser(playerName);
-        send({ type: "request-order", playerid: playerName, name: playerName, roomid: id });
+        setPlayers(navState.players);
+        setCurrentPlayer(navState.currentPlayer);
+        setImposter(navState.imposter);
+        setChat(navState.chat);
+        setProblem(navState.problem);
+        setTestCycle(navState.testCycle);
+        setCode(navState.code);
 
-    }, []);
+    }, [navState]);
 
-    useEffect(() => {
-
-        if (currentUser == highlightedUser) {
-            console.log("starting round")
-            send({ type: "start-round", roomid: id });
-            //SET PHASE
-        }
-        startTurn();
-
-    }, [imposterId]);
-
-    const startTurn = () => {
-        send({ type: "request-code", playerid: currentUser, name: currentUser, roomid: id });
-    }
-
-    // const timeLoop = () => {
-    //     if (time > 0 && currentUser == highlightedUser) {
-    //         send({ type: "request-time", roomid: id });
-    //     } else {
-    //         setRoundActive(false);
-    //     }
-    // }
-
-    useEffect(() => {
-        if (!lastMessage) return;
-
-        let msg: any = lastMessage;
-        if (typeof msg === "string") {
-            try { msg = JSON.parse(msg); } catch { /* keep as string */ }
-        }
-
-        const type = msg?.type;
-
-        console.log("Received message:", lastMessage);
-        if (type === "turn-list") {
-            setUsernames(msg.players);
-            setHighlightedUser(msg.players[0]);
-            send({ type: "request-imposter", playerid: playerName, roomid: id });
-
-        } else if (type === "imposter-player") {
-            setImposterId(msg.name);
-        } else if (type === "source-code") {
-            setCode(msg.code);
-            setTitle(msg.questionTitle);
-            setDescription(msg.questionDescription);
-            setExamples(msg.questionExamples);
-
-        } else if (type === "time-left") {
-            setTime(parseInt(msg.timeLeft));
-            setHighlightedUser(msg.currentPlayer);
-
-        } else if (type === "next-turn") {
-            if (currentUser === highlightedUser) {
-                send({ type: "log-code", name: playerName, playerid: playerName, roomid: id, code: code });
-            }
-            setHighlightedUser(msg.name);
-
-            startTurn();
-
-        } else if (type === "test-results") {
-            if (msg.complete === "passed") {
-                setPhase("voting");
-                send({ type: "log-code", name: playerName, playerid: playerName, roomid: id, code: code });
-                send({ type: "request-logs", playerid: playerName, roomid: id });
-            }
-        } else if (type === "log-list") {
-            setCommits(msg.logs);
-            console.log("Received commits:", msg.logs);
-        }
-    }, [lastMessage, navigate]);
-
-    const handleEditorChange = (value: string | undefined) => {
-        setCode(value || "");
-    };
-
-    const runCode = () => {
-        send({ type: "run-code", roomid: id, playerid: playerName, sourcecode: code });
-    };
-
-    const handleCardClick = (username: string) => {
-        setHighlightedUser(username)
-    };
-
-    const handleCommitClick = (index: number) => {
-        setHighlightedCommit(index)
-    };
+    const phaseLabel = gameState === GameState.Coding
+        ? "Coding"
+        : gameState === GameState.Voting
+            ? "Voting"
+            : "Results";
 
     return (
         <>
-            <div className="h-screen bg-gray-950">
-                <div className="flex">
-                    <h1 className="text-purple-700 text-xl font-bold m-5">
-                        Cheet
-                        <strong className="text-white">Code</strong>
-                    </h1>
+            <div className="flex h-screen flex-col bg-brand-black">
+                <div className="px-5 pt-5 pb-3">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-extrabold tracking-tight">
+                            <span className="text-purple-500">Cheet</span>
+                            <span className="text-white">Code</span>
+                        </h1>
+                        <span className="rounded-full border border-gray-700 bg-brand-gray px-3 py-1 text-xs font-semibold uppercase tracking-widest text-gray-300">
+                            {phaseLabel}
+                        </span>
+                    </div>
                 </div>
-                <div className="flex flex-1">
-                    {phase === "coding" ?
-                        (<SideBar Users={usernames} HighlightedUser={highlightedUser} Time={time} />) :
-                        (<VoteSideBar Users={usernames} HighlightedUser={highlightedUser} HandleCardClick={handleCardClick} Time={time} />)}
-                    {phase !== "results" ? (
-                        imposterId ? (  // only render once imposterId is set
-                            currentUser !== imposterId ? <ProblemPanel Title={title} Description={description} Examples={examples} /> : <ImposterPanel />
-                        ) : (
-                            <div className="text-gray-400">Loading...</div> // optional placeholder
-                        )
-                    ) : (
-                        <ResultsPanel />
-                    )}
-                    {/* <ProblemPanel Title={title} Description={description} Examples={examples} /> */}
-                    {phase === "coding" && (<div className="w-[50%] rounded-xl bg-gray-950 border-2 border-gray-700 m-3">
-                        <div className="border-b-2 border-gray-700 h-5">
-                        </div>
-                        {(currentUser === highlightedUser &&
-                            <Editor
-                                height="600px"
-                                width="100%"
-                                defaultLanguage="python"
-                                defaultValue="// Start coding..."
-                                theme="vs-dark"
-                                value={code}
-                                onChange={handleEditorChange}
-                            />)}
-                        <div className="flex justify-end border-t-2 border-gray-700">
-                            <button
-                                onClick={runCode}
-                                className="cursor-pointer w-20 m-2 p-3 rounded-xl font-bold text-sm text-gray-200 bg-purple-800 hover:bg-purple-900 transition-colors duration-300"
-                            >
-                                Run
-                            </button>
-                        </div>
-                    </div>)}
-                    {phase === "voting" && (<VersionPanel HighlightedCommit={highlightedCommit} HandleCommitClick={handleCommitClick} Commits={commits} />)}
+
+                <div className="min-h-0 flex-1 px-3 pb-3">
+                    <div className="flex min-h-0 h-full items-stretch gap-2 rounded-2xl border border-gray-800 bg-gradient-to-b from-brand-black via-brand-black to-[#13131b]/60 p-1.5">
+                        {gameState === GameState.Coding &&
+                            (<div className="flex min-h-0 flex-1 items-stretch gap-2">
+                                <SideBar />
+                                <ProblemPanel />
+                                <EditorPanel />
+                            </div>)}
+                        {gameState === GameState.Voting &&
+                            (<div className="flex min-h-0 flex-1 items-stretch gap-2">
+                                <VoteSideBar voting={true} />
+                                <ProblemPanel />
+                                <CommitPanel />
+                            </div>)}
+                        {gameState === GameState.Results &&
+                            (<div className="flex min-h-0 flex-1 items-stretch gap-2">
+                                <VoteSideBar voting={false} />
+                                <ResultsPanel />
+                                <CommitPanel />
+                            </div>)}
+                    </div>
                 </div>
             </div >
         </>
