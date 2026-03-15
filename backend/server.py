@@ -160,11 +160,19 @@ async def handler(websocket):
                     await websocket.send("Game already started in room: " + room_id)
                     continue
 
+
+                # create the game but enter the "briefing" stage first
                 game = room.create_game()
                 problem = game.get_problem()
                 test_cycle = game.get_test_cycle()
             
-                print("Game in room " + room_id + " started")
+                print("Game in room " + room_id + " started (briefing)")
+
+                # initialize briefing state on game
+                game.state = "briefing"
+                # correct attribute name and ensure it's a set
+                game.ready_players = set()
+                game.briefing_task = None
 
                 response = {
                     "type": "game-started",
@@ -175,9 +183,77 @@ async def handler(websocket):
                     "testCycle": test_cycle
                 }
 
+                # broadcast briefing start (clients show modal)
                 await room.broadcast(response)
 
-                game.timer_task = asyncio.create_task(game.start_timer(30))
+                # briefing watchdog that will auto-end briefing after timeout
+                async def briefing_watchdog(room, game, timeout = 15):
+                    await asyncio.sleep(timeout)
+                    # only transition if still in briefing
+                    if getattr(game, "state", None) == "briefing":
+                        # transition to coding (assignment, not subtraction)
+                        game.state = "coding"
+                        # broadcast briefing ended -> official start
+                        await room.broadcast({"type": "briefing-ended", "message": "Briefing time over. Game starting."})
+                        # start timer
+                        game.timer_task = asyncio.create_task(game.start_timer(30))
+                        print(f"Briefing timeout reached in room {room_id}, game started")
+                
+                # store the briefing watchdog task (timeout can be tuned)
+                game.briefing_task = asyncio.create_task(briefing_watchdog(room, game, 20))
+        
+            # new handler to handle player signalling that they closed briefing
+            elif msg_type == "player-ready":
+                try:
+                    room_id = data["roomId"]
+                except KeyError:
+                    await websocket.send("Missing room ID")
+                    continue
+                try:
+                    player_id = data["playerId"]
+                except KeyError:
+                    await websocket.send("Missing player ID")
+                    continue
+                    
+                if not room_manager.room_exists(room_id):
+                    await websocket.send("No room found: " + room_id)
+                    continue
+            
+                room = room_manager.get_room(room_id)
+                # if no game or not in briefing, ignore or notify
+                if not room.game_started():
+                    await websocket.send("No game running in room")
+                    continue
+                game = room.get_game()
+                if getattr(game, "state", None) != "briefing":
+                    await websocket.send("Not in briefing phase")
+                    continue
+                
+                # mark player ready
+                # defensive: ensure ready_players exists
+                if not hasattr(game, "ready_players") or game.ready_players is None:
+                    game.ready_players = set()
+                game.ready_players.add(player_id)
+
+                # broadcast ready count so clients can update UI
+                await room.broadcast({"type": "player-ready-update", "readyList": list(game.ready_players)})
+
+                # if everyone is ready, cancel briefing watchdog and start game immediately
+                if len(game.ready_players) >= room.get_number_of_players():
+                    # cancel the briefing task if it's pending
+                    bt = getattr(game, "briefing_task", None)
+                    if bt is not None and not bt.done():
+                        bt.cancel()
+                        try:
+                            await bt
+                        except asyncio.CancelledError:
+                            pass
+                        
+                    # transition to coding and start timers
+                    game.state = "coding"
+                    await room.broadcast({"type": "briefing-ended", "message": "All players ready. Game starting."})
+                    game.timer_task = asyncio.create_task(game.start_timer(30))
+                    print(f"All players ready in room {room_id}, game started")
 
             elif msg_type == "next-turn":
                 try:
@@ -412,7 +488,7 @@ async def handler(websocket):
 
 async def main():
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8765"))
+    port = int(os.getenv("PORT", "5173"))
 
     async with websockets.serve(handler, host, port):
         print(f"Running on ws://{host}:{port}")
