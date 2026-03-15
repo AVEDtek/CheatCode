@@ -1,6 +1,25 @@
+![CheetCode Logo](CheetCode-Logo.png)
+
 # CheetCode
 
-Deployed live at [cheetcode.com](https://playcheetcode.vercel.app/)
+## How to Start
+```
+# Run server
+cd ImposterGame
+python3 -m backend.server
+```
+```
+# In a separate terminal, run proxy
+cd ImposterGame
+ngrok http 8765
+```
+```
+# In a separate terminal, run frontend
+cd ImposterGame
+cd frontend
+cd ImposterGame
+run npm dev
+```
 
 ## Inspiration
 
