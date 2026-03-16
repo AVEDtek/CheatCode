@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import LobbyUserCard from "../components/LobbyUserCard.tsx";
+import LobbyMiniGame from "../components/MiniGame.tsx";
 
 type LobbyLocationState = {
   roomId: string;
@@ -184,6 +185,10 @@ export default function Lobby() {
                     </p>
                   )}
                 </div>
+
+                <LobbyMiniGame roomId={roomId} playerId={username}>
+
+                </LobbyMiniGame>
 
                 <div className="flex flex-col gap-2 px-5 pb-5 pt-4">
                   <button

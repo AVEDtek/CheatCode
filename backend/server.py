@@ -6,6 +6,16 @@ from backend.managers.roomManager import RoomManager
 
 room_manager = RoomManager()
 
+lobby_width = 800
+lobby_height = 500
+player_radius = 16
+
+def clamp_position(x,y):
+    cx = max(player_radius, min(lobby_width - player_radius, int(x)))
+    cy = max(player_radius, min(lobby_height - player_radius, int(y)))
+    return cx, cy
+
+
 async def handler(websocket):
     print("Client connected")
     connected_room_id = None
@@ -107,6 +117,11 @@ async def handler(websocket):
                 }
                 await room.broadcast(response)
 
+                await room.broadcast({
+                    "type": "lobby-state",
+                    "players": room.get_lobby_state()
+                })
+
             elif msg_type == "leave-room":
                 try:
                     room_id = data["roomId"]
@@ -129,6 +144,15 @@ async def handler(websocket):
                     continue
 
                 room.remove_player(player_id)
+
+                await room.broadcast({
+                    "type": "lobby-player-left",
+                    "playerId": player_id
+                })
+                await room.broadcast({
+                    "type": "lobby-state",
+                    "players": room.get_lobby_state()
+                })
 
                 if room.get_number_of_players() == 0:
                     room_manager.remove_room(room_id)
@@ -444,9 +468,63 @@ async def handler(websocket):
 
                 if game.get_number_of_votes() == room.get_number_of_players():
                     await game.set_results()
-            
+
+            elif msg_type == "lobby-init":
+                try:
+                    room_id = data["roomId"]
+                    player_id = data["playerId"]
+                except KeyError:
+                    await websocket.send("Missing roomId or playerId")
+                    continue
+
+                if not room_manager.room_exists(room_id):
+                    await websocket.send("No room found: " + room_id)
+                    continue
+
+                room = room_manager.get_room(room_id)
+                if not room.player_exists(player_id):
+                    await websocket.send("Player not found in room: "+ player_id)
+                    continue
+
+                # ensure sender exists in lobby state
+                room.init_lobby_player(player_id)
+                await websocket.send(json.dumps({
+                    "type": "lobby-state",
+                    "players": room.get_lobby_state()
+                }))
+
+            elif msg_type == "lobby-move":
+                try:
+                    room_id = data["roomId"]
+                    player_id = data["playerId"]
+                    x = data["x"]
+                    y = data["y"]
+                    vx = data.get("vx", 0)
+                    vy = data.get("vy", 0)
+                except KeyError:
+                    await websocket.send("Missing lobby-move fields")
+                    continue
+                
+                if not room_manager.room_exists(room_id):
+                    await websocket.send("No room found: " + room_id)
+                    continue
+
+                room = room_manager.get_room(room_id)
+                if not room.player_exists(player_id):
+                    await websocket.send("Player not found in room: " + player_id)
+                    continue
+                
+                cx, cy = clamp_position(x, y)
+                room.update_lobby_player(player_id, cx, cy, vx, vy)
+
+                await room.broadcast({
+                    "type": "lobby-state",
+                    "players": room.get_lobby_state()
+                })
+
             else:
                 await websocket.send(f"Unknown message type: {msg_type}")
+
     except websockets.exceptions.ConnectionClosed:
         print("Client disconnected")
     finally:
@@ -466,6 +544,14 @@ async def handler(websocket):
             await game.handle_player_disconnect(connected_player_id)
         else:
             room.remove_player(connected_player_id)
+            await room.broadcast({
+                "type": "lobby-player-left",
+                "playerId": connected_player_id
+            })
+            await room.broadcast({
+                "type": "lobby-state",
+                "players": room.get_lobby_state()
+})
 
         if room.get_number_of_players() == 0:
             room_manager.remove_room(connected_room_id)
