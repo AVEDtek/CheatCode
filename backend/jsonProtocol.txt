@@ -70,6 +70,14 @@ Frontend -> Backend:
         votes
         chat
 
+    Request: update-config
+        roomId
+        difficultyRange        # list e.g. ["medium", "hard"]
+        masterTimer            # int (seconds)
+    Response: config-updated
+        difficultyRange
+        masterTimer
+
 Backend -> Frontend
     Message: room-players-update
         playerList
