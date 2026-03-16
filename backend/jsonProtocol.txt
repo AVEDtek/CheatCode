@@ -33,6 +33,12 @@ Frontend -> Backend:
         problem
         testCycle
 
+    Request: set-ready
+        roomId
+        playerId
+    Response: player-ready
+        readyCount
+
     Request: send-message:
         roomId
         playerId
@@ -79,6 +85,11 @@ Backend -> Frontend
         currentPlayer
         chat
 
+    Message: briefing-time-left
+        briefingTimeLeft
+
+    Message briefing-over
+
     Message: time-left
         timeLeft
 
@@ -87,3 +98,8 @@ Backend -> Frontend
     Message: vote-over
         votedList
         votedCorrectly
+
+Other:
+    Request: get-health
+    Response:
+        roomList

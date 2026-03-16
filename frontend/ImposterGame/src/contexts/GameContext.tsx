@@ -9,6 +9,7 @@ import { useSocket } from "./SocketContext";
 import { useRoom } from "./RoomContext";
 
 export const GameState = {
+    Briefing: "briefing",
     Coding: "coding",
     Voting: "voting",
     Results: "results"
@@ -29,6 +30,10 @@ type GameContextValue = {
     setCurrentPlayer: React.Dispatch<React.SetStateAction<string>>;
     imposter: string;
     setImposter: React.Dispatch<React.SetStateAction<string>>;
+    briefingTime: number;
+    setBriefingTime: React.Dispatch<React.SetStateAction<number>>;
+    readyCount: number;
+    setReadyCount: React.Dispatch<React.SetStateAction<number>>;
     chat: any[];
     setChat: React.Dispatch<React.SetStateAction<any[]>>;
     problem: any;
@@ -48,7 +53,7 @@ type GameContextValue = {
 };
 
 const GameContext = createContext<GameContextValue>({
-    gameState: GameState.Coding,
+    gameState: GameState.Briefing,
     setGameState: (_gameState: React.SetStateAction<string>) => { },
     time: 0,
     setTime: (_time: React.SetStateAction<number>) => { },
@@ -58,6 +63,10 @@ const GameContext = createContext<GameContextValue>({
     setCurrentPlayer: (_currentPlayer: React.SetStateAction<string>) => { },
     imposter: "",
     setImposter: (_imposter: React.SetStateAction<string>) => { },
+    briefingTime: 0,
+    setBriefingTime: (_briefingTime: React.SetStateAction<number>) => { },
+    readyCount: 0,
+    setReadyCount: (_skips: React.SetStateAction<number>) => { },
     chat: [],
     setChat: (_chat: React.SetStateAction<any[]>) => { },
     problem: null,
@@ -80,12 +89,15 @@ export default function GameProvider({ children }: GameProviderProps) {
     const { onMessage, send } = useSocket();
     const { roomId, username } = useRoom();
 
-    const [gameState, setGameState] = useState<string>(GameState.Coding);
+    const [gameState, setGameState] = useState<string>(GameState.Briefing);
     const [time, setTime] = useState<number>(0);
 
     const [players, setPlayers] = useState<string[]>([]);
     const [currentPlayer, setCurrentPlayer] = useState<string>("");
     const [imposter, setImposter] = useState<string>("");
+
+    const [briefingTime, setBriefingTime] = useState<number>(0);
+    const [readyCount, setReadyCount] = useState<number>(0);
 
     const [chat, setChat] = useState<any[]>([]);
 
@@ -99,6 +111,15 @@ export default function GameProvider({ children }: GameProviderProps) {
     const [votedCorrectly, setVotedCorrectly] = useState<boolean>(false);
 
     useEffect(() => {
+        const unsubBriefingTimeLeft = onMessage("briefing-time-left", (data) => {
+            setBriefingTime(data.timeLeft);
+        });
+        const unsubPlayerReady = onMessage("player-ready", (data) => {
+            setReadyCount(data.readyCount);
+        });
+        const unsubBriefingOver = onMessage("briefing-over", () => {
+            setGameState(GameState.Coding);
+        });
         const unsubTimeLeft = onMessage("time-left", (data) => {
             setTime(data.timeLeft);
         });
@@ -139,6 +160,9 @@ export default function GameProvider({ children }: GameProviderProps) {
             setChat(data.chat);
         });
         return () => {
+            unsubBriefingTimeLeft();
+            unsubPlayerReady();
+            unsubBriefingOver();
             unsubTimeLeft();
             unsubTurnOver();
             unsubNextTurn();
@@ -161,6 +185,10 @@ export default function GameProvider({ children }: GameProviderProps) {
         setCurrentPlayer,
         imposter,
         setImposter,
+        briefingTime,
+        setBriefingTime,
+        readyCount,
+        setReadyCount,
         chat,
         setChat,
         problem,

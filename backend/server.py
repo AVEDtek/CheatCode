@@ -3,6 +3,7 @@ import websockets
 import json
 import os
 from backend.managers.roomManager import RoomManager
+from backend.models.game import GameState
 
 room_manager = RoomManager()
 
@@ -44,6 +45,8 @@ async def handler(websocket):
                     "playerId": player_id
                 }
                 await websocket.send(json.dumps(response))
+
+                print("Room created:", room_id)
 
             elif msg_type == "join-room":
                 try:
@@ -160,19 +163,9 @@ async def handler(websocket):
                     await websocket.send("Game already started in room: " + room_id)
                     continue
 
-
-                # create the game but enter the "briefing" stage first
                 game = room.create_game()
                 problem = game.get_problem()
                 test_cycle = game.get_test_cycle()
-            
-                print("Game in room " + room_id + " started (briefing)")
-
-                # initialize briefing state on game
-                game.state = "briefing"
-                # correct attribute name and ensure it's a set
-                game.ready_players = set()
-                game.briefing_task = None
 
                 response = {
                     "type": "game-started",
@@ -183,27 +176,11 @@ async def handler(websocket):
                     "testCycle": test_cycle
                 }
 
-                # broadcast briefing start (clients show modal)
                 await room.broadcast(response)
 
-                # briefing watchdog that will auto-end briefing after timeout
-                async def briefing_watchdog(room, game, timeout = 15):
-                    await asyncio.sleep(timeout)
-                    # only transition if still in briefing
-                    if getattr(game, "state", None) == "briefing":
-                        # transition to coding (assignment, not subtraction)
-                        game.state = "coding"
-                        # broadcast briefing ended -> official start
-                        await room.broadcast({"type": "briefing-ended", "message": "Briefing time over. Game starting."})
-                        # start timer
-                        game.timer_task = asyncio.create_task(game.start_timer(30))
-                        print(f"Briefing timeout reached in room {room_id}, game started")
-                
-                # store the briefing watchdog task (timeout can be tuned)
-                game.briefing_task = asyncio.create_task(briefing_watchdog(room, game, 20))
+                game.briefing_timer_task = asyncio.create_task(game.start_briefing_timer(30))
         
-            # new handler to handle player signalling that they closed briefing
-            elif msg_type == "player-ready":
+            elif msg_type == "set-ready":
                 try:
                     room_id = data["roomId"]
                 except KeyError:
@@ -220,40 +197,36 @@ async def handler(websocket):
                     continue
             
                 room = room_manager.get_room(room_id)
-                # if no game or not in briefing, ignore or notify
+
                 if not room.game_started():
                     await websocket.send("No game running in room")
                     continue
+
                 game = room.get_game()
-                if getattr(game, "state", None) != "briefing":
+
+                if game.state != GameState.BRIEFING:
                     await websocket.send("Not in briefing phase")
                     continue
                 
-                # mark player ready
-                # defensive: ensure ready_players exists
-                if not hasattr(game, "ready_players") or game.ready_players is None:
-                    game.ready_players = set()
-                game.ready_players.add(player_id)
+                if not room.player_exists(player_id):
+                    await websocket.send("Player not found in room: " + player_id)
+                    continue
 
-                # broadcast ready count so clients can update UI
-                await room.broadcast({"type": "player-ready-update", "readyList": list(game.ready_players)})
+                game.set_ready(player_id)
 
-                # if everyone is ready, cancel briefing watchdog and start game immediately
-                if len(game.ready_players) >= room.get_number_of_players():
-                    # cancel the briefing task if it's pending
-                    bt = getattr(game, "briefing_task", None)
-                    if bt is not None and not bt.done():
-                        bt.cancel()
-                        try:
-                            await bt
-                        except asyncio.CancelledError:
-                            pass
-                        
-                    # transition to coding and start timers
-                    game.state = "coding"
-                    await room.broadcast({"type": "briefing-ended", "message": "All players ready. Game starting."})
-                    game.timer_task = asyncio.create_task(game.start_timer(30))
-                    print(f"All players ready in room {room_id}, game started")
+                response = {
+                    "type": "player-ready",
+                    "readyCount": game.get_number_of_ready()
+                }
+
+                await room.broadcast(response)
+
+                if game.get_number_of_ready() == room.get_number_of_players():
+                    await room.broadcast({
+                        "type": "briefing-over",
+                    })
+
+                    await game.set_coding()
 
             elif msg_type == "next-turn":
                 try:
@@ -283,7 +256,7 @@ async def handler(websocket):
 
                 game = room.get_game()
 
-                if game.state != "coding":
+                if game.state != GameState.CODING:
                     await websocket.send("Coding not in progress")
                     continue
 
@@ -444,47 +417,58 @@ async def handler(websocket):
 
                 if game.get_number_of_votes() == room.get_number_of_players():
                     await game.set_results()
+
+                response = {
+                    "type": "vote-over",
+                    "voted": game.get_voted(),
+                    "votedCorrectly": game.get_imposter_id() in game.get_voted(),
+                }
+                await room.broadcast(response)
+
+            elif msg_type == "get-health":
+                
+                response = {
+                    "type": "health",
+                    "rooms": room_manager.get_rooms()
+                }
+                await websocket.send(json.dumps(response))
             
             else:
                 await websocket.send(f"Unknown message type: {msg_type}")
     except websockets.exceptions.ConnectionClosed:
         print("Client disconnected")
     finally:
-        # Connection may close before this socket ever joins a room.
-        if connected_room_id is None or connected_player_id is None:
-            return
+        if (
+            connected_room_id is not None
+            and connected_player_id is not None
+            and room_manager.room_exists(connected_room_id)
+        ):
+            room = room_manager.get_room(connected_room_id)
+            if room.player_exists(connected_player_id):
+                if room.game_started():
+                    game = room.get_game()
+                    await game.handle_player_disconnect(connected_player_id)
+                else:
+                    room.remove_player(connected_player_id)
 
-        if not room_manager.room_exists(connected_room_id):
-            return
-
-        room = room_manager.get_room(connected_room_id)
-        if not room.player_exists(connected_player_id):
-            return
-
-        if room.game_started():
-            game = room.get_game()
-            await game.handle_player_disconnect(connected_player_id)
-        else:
-            room.remove_player(connected_player_id)
-
-        if room.get_number_of_players() == 0:
-            room_manager.remove_room(connected_room_id)
-            print("Deleted empty room: " + connected_room_id)
-        else:  
-            response = {
-                "type": "room-players-update",
-                "playerList": room.get_players_ids()
-            }
-            await room.broadcast(response)
-            if room.game_started():
-                game = room.get_game()
-                response = {
-                    "type": "game-players-update",
-                    "playerList": game.get_player_ids(),
-                    "currentPlayer": game.players[game.current_player_idx].id,
-                    "chat": game.get_chat()
-                }
-                await room.broadcast(response)
+                if room.get_number_of_players() == 0:
+                    room_manager.remove_room(connected_room_id)
+                    print("Deleted empty room: " + connected_room_id)
+                else:
+                    response = {
+                        "type": "room-players-update",
+                        "playerList": room.get_players_ids()
+                    }
+                    await room.broadcast(response)
+                    if room.game_started():
+                        game = room.get_game()
+                        response = {
+                            "type": "game-players-update",
+                            "playerList": game.get_player_ids(),
+                            "currentPlayer": game.players[game.current_player_idx].id,
+                            "chat": game.get_chat()
+                        }
+                        await room.broadcast(response)
 
 async def main():
     host = os.getenv("HOST", "0.0.0.0")

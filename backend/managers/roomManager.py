@@ -32,3 +32,6 @@ class RoomManager:
     def remove_room(self, room_id):
         if self.room_exists(room_id):
             del self.rooms[room_id]
+
+    def get_rooms(self):
+        return list(self.rooms.keys())

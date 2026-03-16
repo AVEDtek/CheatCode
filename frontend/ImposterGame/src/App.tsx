@@ -1,4 +1,5 @@
 import { Routes, Route, Outlet } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 
 import Welcome from "./pages/Welcome.tsx";
 import Lobby from "./pages/Lobby.tsx";
@@ -31,6 +32,7 @@ function App() {
           />
         </Route>
       </Routes>
+      <Analytics />
     </SocketProvider>
   );
 }

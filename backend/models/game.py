@@ -7,7 +7,8 @@ from typing import TypedDict
 
 from backend.managers.testRunner import TestRunner
 
-class GameState(str, Enum):        
+class GameState(str, Enum):  
+    BRIEFING = "briefing"      
     CODING = "coding"            
     VOTING = "voting"            
     RESULTS = "results"
@@ -39,7 +40,10 @@ class Game:
     def __init__(self, players, room):
         self.room = room
 
-        self.state = GameState.CODING
+        self.state = GameState.BRIEFING
+        self.briefing_time_left = 0
+        self.briefing_timer_task = None
+
         self.time_left = 0
         self.timer_task = None
 
@@ -132,6 +136,46 @@ class Game:
                 player.add_vote()
                 break
 
+    async def stop_briefing_timer(self):
+        if self.briefing_timer_task and not self.briefing_timer_task.done():
+            self.briefing_timer_task.cancel()
+            try:
+                await self.briefing_timer_task
+            except asyncio.CancelledError:
+                pass
+        self.briefing_timer_task = None
+        self.briefing_time_left = 0
+
+    async def start_briefing_timer(self, seconds):
+        self.briefing_time_left = seconds
+        try:
+            while self.briefing_time_left > 0:
+                await self.room.broadcast({
+                    "type": "briefing-time-left",
+                    "timeLeft": self.briefing_time_left
+                })
+                await asyncio.sleep(1)
+                self.briefing_time_left -= 1
+
+            await self.room.broadcast({
+                "type": "briefing-over"
+            })
+
+            await self.set_coding()
+        except asyncio.CancelledError:
+            pass
+
+    def set_ready(self, player_id):
+        for player in self.players:
+            if player.id == player_id:
+                player.set_ready()
+                break
+
+    async def set_coding(self):
+        await self.stop_briefing_timer()
+        self.timer_task = asyncio.create_task(self.start_timer(30))
+        self.state = GameState.CODING
+
     async def stop_timer(self):
         if self.timer_task and not self.timer_task.done():
             self.timer_task.cancel()
@@ -221,12 +265,6 @@ class Game:
     async def set_results(self):
         self.state = GameState.RESULTS
         await self.stop_timer()
-        response = {
-            "type": "vote-over",
-            "voted": self.get_voted(),
-            "votedCorrectly": self.get_imposter_id() in self.get_voted(),
-        }
-        await self.room.broadcast(response)
 
     def get_player_ids(self):
         return [player.id for player in self.players]
@@ -236,6 +274,9 @@ class Game:
             if player.role == "imposter":
                 return player.id
         return None
+
+    def get_number_of_ready(self):
+        return sum(1 for player in self.players if player.ready)
 
     def get_chat(self):
         return self.chat
