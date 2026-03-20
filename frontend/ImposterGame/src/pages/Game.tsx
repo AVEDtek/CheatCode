@@ -28,7 +28,6 @@ type GameLocationState = {
 export default function Game() {
     const {
         gameError, 
-        gameErrorMessage,
         gameState,
         setPlayers,
         setCurrentPlayer,
