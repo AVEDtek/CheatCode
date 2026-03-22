@@ -88,7 +88,7 @@ cd ImposterGame
 cd frontend
 cd ImposterGame
 export VITE_BACKEND_URL=ws://localhost:8765
-run npm dev
+npm run dev
 ```
 
 ## Inspiration
