@@ -75,22 +75,19 @@ pip freeze > requirements.txt
 
 
 
-## How to Start
+## How to Start (localy)
 ```
 # Run server
 cd ImposterGame
-python3 -m backend.server
+PORT=8765 python3 -m backend.server
 ```
-```
-# In a separate terminal, run proxy
-cd ImposterGame
-ngrok http 8765
-```
+
 ```
 # In a separate terminal, run frontend
 cd ImposterGame
 cd frontend
 cd ImposterGame
+export VITE_BACKEND_URL=ws://localhost:8765
 run npm dev
 ```
 
