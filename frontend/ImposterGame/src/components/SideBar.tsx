@@ -1,5 +1,5 @@
 import { useGame } from "../contexts/GameContext.tsx";
-
+import { useEffect, useRef } from "react";
 import UserCard from "./UserCard.tsx";
 
 export default function SideBar() {
@@ -9,6 +9,53 @@ export default function SideBar() {
         players,
         currentPlayer
     } = useGame();
+
+    const CLIP_URL = "/sounds/clockTicking.mp3";
+    const PLAY_MS = 5000; //5 seconds
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const stopTimerRef = useRef<number | null>(null);
+    const startedForRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        audioRef.current = new Audio(CLIP_URL);
+        audioRef.current.preload = "auto";
+
+        return () => {
+            if (stopTimerRef.current != null) window.clearTimeout(stopTimerRef.current);
+            audioRef.current?.pause();
+            if (audioRef.current) audioRef.current.currentTime = 0;
+        };
+    }, []);
+
+    useEffect(() => {
+        // start exactly when the countdown reaches 5
+        if (turnTime > 5 || turnTime <= 0) {
+            startedForRef.current = null;
+            return;
+        }
+
+        // guard against duplicate starts (re-renders / repeated state)
+        if (startedForRef.current === 5) return;
+        startedForRef.current = 5;
+
+        const a = audioRef.current;
+        if (!a) return;
+
+        if (stopTimerRef.current != null) window.clearTimeout(stopTimerRef.current);
+
+        a.pause();
+        a.currentTime = 0;
+
+        a.play().catch(() => {
+            // may be blocked until a user gesture (browser autoplay policy)
+        });
+
+        stopTimerRef.current = window.setTimeout(() => {
+                a.pause();
+                a.currentTime = 0;
+            }, PLAY_MS);
+    }, [turnTime]);
 
     return (
         <>
