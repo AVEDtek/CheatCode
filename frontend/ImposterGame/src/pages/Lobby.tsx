@@ -13,6 +13,12 @@ type LobbyLocationState = {
   players: string[];
 };
 
+const MIN_PLAYERS_TO_START = (() => {
+  const raw = import.meta.env.VITE_MIN_PLAYERS_TO_START;
+  const parsed = Number.parseInt(raw ?? "", 10);
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 3;
+})();
+
 export default function Lobby() {
   const {
     send,
@@ -87,7 +93,7 @@ export default function Lobby() {
     navigate("/");
   }
 
-  const canStartGame = players.length >= 3 && players[0] === username;
+  const canStartGame = players.length >= MIN_PLAYERS_TO_START && players[0] === username;
 
   return (
     <>
@@ -178,7 +184,7 @@ export default function Lobby() {
                     <p className="text-gray-600 text-xs text-center">
                       {players[0] !== username
                         ? "Only the host can start"
-                        : "Need at least 3 players"}
+                        : `Need at least ${MIN_PLAYERS_TO_START} player${MIN_PLAYERS_TO_START === 1 ? "" : "s"}`}
                     </p>
                   )}
                 </div>

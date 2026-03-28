@@ -75,19 +75,22 @@ pip freeze > requirements.txt
 
 
 
-## How to Start (localy)
+## How to Start (localy) (may break if less than 2 players minimum)
 ```
 # Run server
-cd ImposterGame
-PORT=8765 python3 -m backend.server
+
+source backend/.venv/bin/activate
+
+PORT=8765 MIN_PLAYERS_TO_START=1  MIN_PLAYERS_TO_CONTINUE=1 python3 -m backend.server
 ```
 
 ```
 # In a separate terminal, run frontend
-cd ImposterGame
-cd frontend
-cd ImposterGame
+
+cd frontend/ImposterGame
 export VITE_BACKEND_URL=ws://localhost:8765
+export VITE_MIN_PLAYERS_TO_START=1   # optional but will permanently set to 1, switch back to 3
+npm install        # only needed once
 npm run dev
 ```
 

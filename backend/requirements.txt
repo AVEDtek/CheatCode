@@ -21,6 +21,8 @@ async-timeout==4.0.3
 attrs==26.1.0
 better-profanity==0.7.0
 builtin-interfaces==1.2.1
+certifi==2026.2.25
+charset-normalizer==3.4.6
 composition-interfaces==1.2.1
 cv-bridge==3.2.1
 demo-nodes-py==0.20.5
@@ -66,6 +68,7 @@ quality-of-service-demo-py==0.20.5
 rcl-interfaces==1.2.1
 rclpy==3.3.14
 rcutils==5.1.6
+requests==2.33.0
 resource-retriever==3.1.2
 rmw-dds-common==1.6.0
 ros2action==0.18.11
@@ -138,6 +141,7 @@ trajectory-msgs==4.2.4
 turtlesim==1.4.2
 typing_extensions==4.15.0
 unique-identifier-msgs==2.2.1
+urllib3==2.6.3
 visualization-msgs==4.2.4
 websockets==12.0
 yarl==1.23.0

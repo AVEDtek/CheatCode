@@ -2,6 +2,7 @@ import random
 import json
 import time
 import asyncio
+import os
 
 from enum import Enum
 from typing import TypedDict
@@ -9,6 +10,16 @@ from better_profanity import profanity
 
 from backend.managers.timeManager import TimeManager
 from backend.managers.testRunner import TestRunner
+
+def _get_min_players_to_continue() -> int:
+    raw = os.getenv("MIN_PLAYERS_TO_CONTINUE", "3")
+    try:
+        value = int(raw)
+    except ValueError:
+        value = 3
+    return max(1, value)
+
+MIN_PLAYERS_TO_CONTINUE = _get_min_players_to_continue()
 
 class GameState(str, Enum):  
     BRIEFING = "briefing"      
@@ -246,7 +257,7 @@ class Game:
             await self.time_manager.stop_all_timers()
             return
 
-        if len(self.players) < 3:
+        if len(self.players) < MIN_PLAYERS_TO_CONTINUE:
             await self.room.broadcast({
                 "type": "not-enough-players"
             })
