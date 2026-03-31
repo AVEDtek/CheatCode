@@ -5,10 +5,10 @@
             "title": "Two Sum",
             "type": "Algorithm",
             "difficulty": "Easy",
-            "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.",
+            "description": "You are given a list of integers and a target value. Find the indices of two distinct elements in the list whose sum equals the target. You may assume exactly one valid pair exists, and you cannot use the same element twice. If no pair exists, return an empty list.",
             "examples": [
-                "Input: nums = [2,7,11,15], target = 9\nOutput: [0,1]",
-                "Input: nums = [3,2,4], target = 6\nOutput: [1,2]",
+                "Input: nums = [4,5,11,20], target = 9\nOutput: [0,1]",
+                "Input: nums = [0,6,8], target = 6\nOutput: [0,1]",
                 "Input: nums = [3,3], target = 6\nOutput: [0,1]"
             ],
             "constraints": [
@@ -23,21 +23,57 @@
             "code": "def twoSum(nums, target):\n    # Write your solution here\n    pass",
             "test_cases": [
                 {
-                    "input": [[2, 7, 11, 15], 9],
-                    "expected": [0, 1]
+                    "input": [[4, 5, 11, 20], 9],
+                    "expected": [0, 1],
+                    "visible": true
                 },
                 {
-                    "input": [[3, 2, 4], 6],
-                    "expected": [1, 2]
+                    "input": [[6, 0, 8], 6],
+                    "expected": [0, 1],
+                    "visible": true
                 },
                 {
                     "input": [[3, 3], 6],
-                    "expected": [0, 1]
+                    "expected": [0, 1],
+                    "visible": true
+                    
                 },
                 {
                     "input": [[3, 3], 6],
-                    "expected": [0, 1]
+                    "expected": [0, 1],
+                    "visible": false
+                },
+                {
+                    "input": [[-1, -2, -3, -4, -5], -8],
+                    "expected": [2, 4],
+                    "visible": false
+                },
+                {
+                    "input": [[-3, 4, 3, 90], 0],
+                    "expected": [0, 2],
+                    "visible": false
+                },
+                {
+                    "input": [[0, 4, 3, 0], 0],
+                    "expected": [0, 3],
+                    "visible": false
+                },
+                {
+                    "input": [[1, 5, 3, 11, 9, 2, 8], 10],
+                    "expected": [0, 4],
+                    "visible": false
+                },
+                {
+                    "input": [[1, 2], 3],
+                    "expected": [0, 1],
+                    "visible": false
+                },
+                {
+                    "input": [[1, 2, 3], 7],
+                    "expected": [],
+                    "visible": false
                 }
+
             ]
         },
         {
@@ -62,15 +98,18 @@
             "test_cases": [
                 {
                     "input": ["abcabcbb"],
-                    "expected": 3
+                    "expected": 3,
+                    "visible": true
                 },
                 {
                     "input": ["bbbbb"],
-                    "expected": 1
+                    "expected": 1, 
+                    "visible": true
                 },
                 {
                     "input": ["pwwkew"],
-                    "expected": 3
+                    "expected": 3,
+                    "visible": true
                 }
             ]
         },
@@ -96,15 +135,18 @@
             "test_cases": [
                 {
                     "input": ["ADOBECODEBANC", "ABC"],
-                    "expected": "BANC"
+                    "expected": "BANC",
+                    "visible": true
                 },
                 {
                     "input": ["a", "a"],
-                    "expected": "a"
+                    "expected": "a",
+                    "visible": true
                 },
                 {
                     "input": ["a", "aa"],
-                    "expected": ""
+                    "expected": "",
+                    "visible": true
                 }
             ]
         }

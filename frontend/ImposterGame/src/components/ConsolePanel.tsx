@@ -103,10 +103,13 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
 
                     <div className="flex flex-wrap gap-1.5">
                         {testCycle.map((_, index) => (
+                            
                             <div key={index}>
-                                {passed.length > 0 ?
-                                    <TestCard index={index} passed={passed[index]} highlight={index === highlightedCard} handleCardClick={handleCardClick} /> :
-                                    <TestCard index={index} highlight={index === highlightedCard} handleCardClick={handleCardClick} />}
+                                {testCycle[index].visible ? 
+                                    (passed.length > 0 ?
+                                        <TestCard index={index} passed={passed[index]} highlight={index === highlightedCard} handleCardClick={handleCardClick} /> :
+                                        <TestCard index={index} highlight={index === highlightedCard} handleCardClick={handleCardClick} />)
+                                : null}
                             </div>
                         ))}
                     </div>
