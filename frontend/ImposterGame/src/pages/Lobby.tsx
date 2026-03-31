@@ -47,7 +47,7 @@ export default function Lobby() {
           imposter: data.imposterId,
           chat: data.chat,
           problem: data.problem,
-          testCycle: data.testCycle,
+          testCycle: data.testCases,
           code: data.problem["code"]
         },
       });

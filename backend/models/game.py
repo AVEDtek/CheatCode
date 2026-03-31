@@ -43,7 +43,7 @@ class Problem(TypedDict):
     code: str
 
 class TestCycle(TypedDict):
-    input: dict
+    input: list
     expected: any
 
 class Commit(TypedDict):
@@ -67,8 +67,8 @@ class Game:
         self.load_chat()
         self.commits = []
 
-        self.problem, self.test_cycle = self.load_random_problem_and_test_cycle()
-        self.test_runner = TestRunner(self.test_cycle)
+        self.problem, self.test_cases = self.load_random_problem_and_test_cases()
+        self.test_runner = TestRunner(self.test_cases)
 
     def start_timer(self):
         self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
@@ -81,27 +81,26 @@ class Game:
     def load_chat(self):
         self.add_message("System", "Chatroom is open. Keep your clues subtle.", time.time())
     
-    def load_random_problem_and_test_cycle(self):
-        file_path = 'backend/data/problems.json'
+    def load_random_problem_and_test_cases(self):
+        file_path = 'backend/data/algorithm.json'
 
         with open(file_path) as f:
             data = json.load(f)
-        
-        problems = {
-            p["id"]: {
-                "title": p["title"],
-                "difficulty": p["difficulty"],
-                "description": p["description"],
-                "examples": p["examples"],
-                "constraints": p["constraints"],
-                "topics": p["topics"],
-                "code": p["code"], 
-                "testCycle": p["testCycle"]
-            } 
-            for p in data["problems"]
+
+        problem_id = random.randrange(0, len(data["problems"]))
+
+        problem_data = data["problems"][problem_id]
+        problem = {
+            "title": problem_data["title"],
+            "difficulty": problem_data["difficulty"],
+            "description": problem_data["description"],
+            "examples": problem_data["examples"],
+            "constraints": problem_data["constraints"],
+            "topics": problem_data["topics"],
+            "code": problem_data["code"],
+            "test_cases": problem_data["test_cases"]
         }
-        problem_id = random.randrange(1, len(problems)+1)
-        problem = problems.get(problem_id)
+
         problem_obj: Problem = {
             "id": problem_id,
             "title": problem["title"], 
@@ -112,9 +111,10 @@ class Game:
             "topics": problem["topics"],
             "code": problem["code"]
         }
-        test_cycle_obj: TestCycle = problem["testCycle"]
+        #How does the test obj work?
+        test_cases_obj: TestCycle = problem["test_cases"]
         self.add_commit("System", problem["code"])
-        return problem_obj, test_cycle_obj
+        return problem_obj, test_cases_obj
 
     def add_commit(self, player_id, code):
         commit: Commit = {
@@ -138,13 +138,12 @@ class Game:
 
     def parse_results(self, result):
         try:
-            results = json.loads(result.stdout)
-            outputs = [r.get("output") for r in results]
-            passed = [r.get("passed") for r in results]
+            outputs = [r.get("output") for r in result.tests.get('results')]
+            passed = [r.get("passed") for r in result.tests.get('results')]
             all_passed = all(passed)
             return outputs, passed, all_passed
         except json.JSONDecodeError:
-            return [None] * len(self.test_cycle), [False] * len(self.test_cycle), False
+            return [None] * len(self.test_cases), [False] * len(self.test_cases), False
 
     def cast_vote(self, voter_id, voted_id):
         self.add_message("System", f"{voter_id} has cast their vote.", time.time())
@@ -225,8 +224,8 @@ class Game:
     def get_problem(self):
         return self.problem
 
-    def get_test_cycle(self):
-        return self.test_cycle
+    def get_test_cases(self):
+        return self.test_cases
 
     def get_commits(self):
         return self.commits

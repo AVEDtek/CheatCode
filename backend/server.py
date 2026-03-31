@@ -7,6 +7,16 @@ from backend.models.game import GameState
 
 room_manager = RoomManager()
 
+def _get_min_players_to_start() -> int:
+    raw = os.getenv("MIN_PLAYERS_TO_START", "3")
+    try:
+        value = int(raw)
+    except ValueError:
+        value = 3
+    return max(1, value)
+
+MIN_PLAYERS_TO_START = _get_min_players_to_start()
+
 async def handle_disconnect(room_id, player_id):
     if (
         room_id is not None
@@ -173,13 +183,20 @@ async def handler(websocket):
                 
                 room = room_manager.get_room(room_id)
 
+                if room.get_number_of_players() < MIN_PLAYERS_TO_START:
+                    await websocket.send(json.dumps({
+                        "type": "not-enough-players",
+                        "minPlayers": MIN_PLAYERS_TO_START
+                    }))
+                    continue
+
                 if room.game_started():
                     await websocket.send("Game already started in room: " + room_id)
                     continue
 
                 game = room.create_game()
                 problem = game.get_problem()
-                test_cycle = game.get_test_cycle()
+                test_cases = game.get_test_cases()
 
                 response = {
                     "type": "game-started",
@@ -187,7 +204,7 @@ async def handler(websocket):
                     "imposterId": game.get_imposter_id(),
                     "chat": game.get_chat(),
                     "problem": problem,
-                    "testCycle": test_cycle
+                    "testCases": test_cases
                 }
 
                 await room.broadcast(response)
@@ -383,10 +400,9 @@ async def handler(websocket):
                     await websocket.send("Coding not in progress")
                     continue
 
-                results = game.run_tests(code)
-
+                results = game.run_tests(code)              
                 if results.returncode != 0:
-                    outputs, passed = [results.stderr] * len(game.get_test_cycle()), [False] * len(game.get_test_cycle())
+                    outputs, passed = [results.stderr] * len(game.get_test_cases()), [False] * len(game.get_test_cases())
                     response = {
                         "type": "test-results",
                         "error": True,
