@@ -2,23 +2,96 @@
 
 # CheetCode
 
-## How to Start
+## 🧰 Python Backend Setup
+
+### 1. Create a virtual environment
+```bash
+cd backend
+```
+
+```bash
+python -m venv .venv
+```
+
+### 2. Activate it
+
+**Mac/Linux:**
+
+```bash
+source .venv/bin/activate
+```
+
+**Windows (PowerShell):**
+
+```bash
+.venv\Scripts\Activate.ps1
+```
+
+**Windows (cmd):**
+
+```bash
+.venv\Scripts\activate
+```
+
+---
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### 4. Run the project
+
+```bash
+python -m backend.server.py
+```
+
+---
+
+## ➕ Adding New Dependencies
+
+Install a package:
+
+```bash
+pip install <package-name>
+```
+
+Update `requirements.txt`:
+
+```bash
+pip freeze > requirements.txt
+```
+
+---
+
+## 🧠 Notes
+
+* `.venv/` should be in `.gitignore`
+* `requirements.txt` should be committed
+* Always activate `.venv` before installing or running anything
+
+
+
+## How to Start (localy) (may break if less than 2 players minimum)
 ```
 # Run server
-cd ImposterGame
-python3 -m backend.server
+
+source backend/.venv/bin/activate
+
+PORT=8765 MIN_PLAYERS_TO_START=1  MIN_PLAYERS_TO_CONTINUE=1 python3 -m backend.server
 ```
-```
-# In a separate terminal, run proxy
-cd ImposterGame
-ngrok http 8765
-```
+
 ```
 # In a separate terminal, run frontend
-cd ImposterGame
-cd frontend
-cd ImposterGame
-run npm dev
+
+cd frontend/ImposterGame
+export VITE_BACKEND_URL=ws://localhost:8765
+export VITE_MIN_PLAYERS_TO_START=1   # optional but will permanently set to 1, switch back to 3
+npm install        # only needed once
+npm run dev
 ```
 
 ## Inspiration

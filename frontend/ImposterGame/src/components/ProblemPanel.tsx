@@ -144,7 +144,7 @@ export default function ProblemPanel() {
                         </div>
                     )
                 ) : (
-                    <div className="min-h-0 flex flex-1 flex-col px-5 py-5 gap-4">
+                    <div className="min-h-0 flex flex-1 flex-col px-5 py-5 gap-4 overflow-hidden">
                         <div className="rounded-xl border border-gray-700 bg-brand-gray-light/60 p-3">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
@@ -157,7 +157,7 @@ export default function ProblemPanel() {
                             </div>
                         </div>
 
-                        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
+                        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-3 pr-1 w-full min-w-0">
                             {chat.map((message: any, index: number) => {
                                 if (message.sender === "System") {
                                     return (
@@ -172,15 +172,15 @@ export default function ProblemPanel() {
                                 const isOwnMessage = message.sender === username;
 
                                 return (
-                                    <div key={`${message.time}-${index}`} className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
-                                        <div className={`max-w-[85%] rounded-xl px-3 py-2 border ${isOwnMessage ? "bg-purple-600/20 border-purple-500/35" : "bg-brand-gray-light border-gray-700"}`}>
+                                    <div key={`${message.time}-${index}`} className={`flex min-w-0 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+                                        <div className={`max-w-[85%] min-w-0 overflow-hidden rounded-xl px-3 py-2 border ${isOwnMessage ? "bg-purple-600/20 border-purple-500/35" : "bg-brand-gray-light border-gray-700"}`}>
                                             <div className="mb-1 flex items-center gap-2 text-xs">
                                                 <span className={`font-semibold ${isOwnMessage ? "text-purple-300" : "text-gray-300"}`}>
                                                     {isOwnMessage ? "You" : message.sender}
                                                 </span>
                                                 <span className="text-gray-500">{message.timestamp}</span>
                                             </div>
-                                            <p className="whitespace-pre-wrap break-words text-sm text-gray-200">{message.message}</p>
+                                            <p className="whitespace-pre-wrap break-all text-sm text-gray-200 [overflow-wrap:anywhere]">{message.message}</p>
                                         </div>
                                     </div>
                                 );
@@ -197,6 +197,12 @@ export default function ProblemPanel() {
                                     className="w-full h-[50px] resize-none rounded-xl border border-gray-700 bg-brand-gray-light px-3 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-purple-600 transition-colors duration-200 custom-scrollbar"
                                     rows={1}
                                     maxLength={200}
+                                    onKeyDown={(e) => {
+                                        if (e.key !== "Enter") return;
+                                        if (e.shiftKey) return;
+                                        e.preventDefault();
+                                        if (message.trim().length > 0) onSendClick();
+                                    }}
                                 />
                             </div>
                             <button

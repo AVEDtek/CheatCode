@@ -2,6 +2,7 @@ import { useSocket } from "../contexts/SocketContext.tsx";
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ClipboardPaste } from "lucide-react";
 
 type JoinFormProps = {
   onCancelJoinClick: () => void;
@@ -54,6 +55,16 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
     send(request);
   }
 
+  async function onPasteRoomCodeClick() {
+    try {
+      const text = await navigator.clipboard.readText();
+      setRoomId(text.toUpperCase().trim());
+      setErrorMessage("");
+    } catch {
+      setErrorMessage("Clipboard access was blocked. Please paste manually.");
+    }
+  }
+
   const canJoin = username.trim() !== "" && roomId.trim() !== "";
 
   return (
@@ -83,15 +94,26 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="roomId" className="text-gray-400 text-xs uppercase tracking-widest font-semibold">Room Code</label>
-              <input
-                type="text"
-                id="roomId"
-                placeholder="e.g. ABCD12"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value.toUpperCase())}
-                autoCapitalize="characters"
-                className="border border-gray-700 rounded-xl bg-brand-gray-light text-gray-100 placeholder-gray-600 px-4 py-2.5 text-sm font-mono tracking-widest outline-none focus:border-purple-600 transition-colors duration-200"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="roomId"
+                  placeholder="e.g. ABCD12"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+                  autoCapitalize="characters"
+                  className="w-full border border-gray-700 rounded-xl bg-brand-gray-light text-gray-100 placeholder-gray-600 px-4 pr-11 py-2.5 text-sm font-mono tracking-widest outline-none focus:border-purple-600 transition-colors duration-200"
+                />
+                <button
+                  type="button"
+                  onClick={onPasteRoomCodeClick}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
+                  title="Paste room code"
+                  aria-label="Paste room code"
+                >
+                  <ClipboardPaste size={14} />
+                </button>
+              </div>
             </div>
           </div>
 

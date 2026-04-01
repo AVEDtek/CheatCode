@@ -2,7 +2,7 @@ import { GitCommitHorizontal } from "lucide-react";
 
 import { useState } from "react";
 
-import Editor from "@monaco-editor/react";
+import Editor, { DiffEditor } from "@monaco-editor/react";
 import CommitCard from "./CommitCard.tsx";
 
 import { useGame } from "../contexts/GameContext.tsx";
@@ -17,6 +17,9 @@ export default function VersionPanel() {
     const handleCommitClick = (index: number) => {
         setSelectedCommit(index)
     };
+
+    const selectedCode = selectedCommit >= 0 ? commits[selectedCommit].code : "";
+    const previousCode = selectedCommit >= 0 ? (selectedCommit === 0 ? commits[selectedCommit].code : commits[selectedCommit - 1].code) : "";
 
     return (
         <>
@@ -49,16 +52,38 @@ export default function VersionPanel() {
                     </div>
                     {selectedCommit !== -1 ? (
                         <div className="w-[60%] min-h-0 bg-brand-gray-light/30">
-                            <Editor
-                                height="100%"
-                                width="100%"
-                                defaultLanguage="python"
-                                value={commits?.[selectedCommit]?.code}
-                                theme="vs-dark"
-                                options={{
-                                    readOnly: true
-                                }}
-                            />
+                            {selectedCommit === 0 ? (
+                                <Editor
+                                    height="100%"
+                                    width="100%"
+                                    defaultLanguage="python"
+                                    value={selectedCode}
+                                    theme="vs-dark"
+                                    options={{
+                                        readOnly: true,
+                                        minimap: { enabled: false }
+                                    }}
+                                />
+                            ) : (
+                                <DiffEditor
+                                    height="100%"
+                                    width="100%"
+                                    language="python"
+                                    original={previousCode}
+                                    modified={selectedCode}
+                                    theme="vs-dark"
+                                    options={{
+                                        readOnly: true,
+                                        originalEditable: false,
+                                        renderSideBySide: true,
+                                        minimap: { enabled: false },
+                                        wordWrap: "on",
+                                        diffWordWrap: "on",
+                                        scrollBeyondLastLine: false,
+                                        ignoreTrimWhitespace: false
+                                    }}
+                                />
+                            )}
                         </div>)
                         :
                         (<div className="flex min-h-0 flex-1 items-center justify-center text-center w-[60%] p-8 bg-brand-gray-light/30">

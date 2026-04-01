@@ -21,6 +21,17 @@ export default function EditorPanel() {
     const handleEditorChange = (code: string | undefined) => {
         if (code !== undefined) {
             setCode(code);
+
+            if (!isConnected) {
+                console.error("Socket not connected");
+                return;
+            }
+            const request = {
+                type: "new-code",
+                roomId: roomId,
+                code: code
+            };
+            send(request);
         }
     };
 
@@ -107,16 +118,24 @@ export default function EditorPanel() {
                     </div>
                 ) : (
                     <div className="flex flex-1 flex-col bg-brand-gray min-h-0">
-                        <div className="flex flex-1 items-center justify-center text-center p-8 bg-brand-gray-light/40">
-                            <div className="max-w-sm rounded-2xl border border-gray-700 bg-brand-gray-light/50 px-6 py-8">
-                                <p className="text-xs uppercase tracking-widest font-semibold text-gray-500 mb-2">Stand By</p>
-                                <p className="text-gray-300 text-lg font-semibold">
-                                    It's {currentPlayer}'s turn
-                                </p>
-                                <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                                    Watch their approach and prepare your next move.
-                                </p>
-                            </div>
+                        <div className="flex items-center justify-between border-b border-gray-700 px-4 py-2 bg-brand-gray-light/30">
+                            <p className="text-xs uppercase tracking-widest font-semibold text-gray-500">Live View</p>
+                            <p className="text-sm font-semibold text-gray-300">
+                                {currentPlayer} is coding
+                            </p>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <Editor
+                                height="100%"
+                                width="100%"
+                                defaultLanguage="python"
+                                theme="vs-dark"
+                                value={code}
+                                options={{
+                                    readOnly: true,
+                                    minimap: { enabled: false }
+                                }}
+                            />
                         </div>
                         <div className="flex h-16 min-h-16 shrink-0 justify-end border-t border-gray-700 bg-brand-gray" />
                     </div>
