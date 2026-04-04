@@ -7,6 +7,8 @@ import textwrap
 import ast
 import requests
 
+from backend.models.types import Constraints, TestCases, Results
+
 
 def get_first_function_name(code):
     try:
@@ -15,23 +17,16 @@ def get_first_function_name(code):
             if isinstance(node, ast.FunctionDef):
                 return node.name
     except:
-        pass
-    return None
+        print("Error parsing code to get function name")
+        return None
 
-#TODO: Move to seperate file for types
-
-class Results:
-    def __init__(self, returncode, stdout, stderr, tests):
-        self.returncode = returncode
-        self.stdout = stdout
-        self.stderr = stderr
-        self.tests = tests
 
 class TestRunner:
-    def __init__(self, testCases):
+    def __init__(self, testCases, constraints):
         self.tests = testCases
+        self.constraints = constraints
 
-    def run_tests(self, code, constraints):
+    def run_tests(self, code):
         #check if server is running. if not run locally (for dev, in production this should throw a server error that we can catch and display to the user)
         url = "http://127.0.0.1:8000/status"
         try:
@@ -39,26 +34,23 @@ class TestRunner:
             response = response.json()
             print("Server response:", response)
             if response.get("status") == "ok":
-                return self.execute_tests(code, constraints)
+                return self.execute_tests(code)
             else:
-                return self.locally_execute_tests(code, constraints)
+                return self.locally_execute_tests(code)
         except requests.exceptions.RequestException as e:
             print("Server not reachable, running tests locally:", e)
-            return self.locally_execute_tests(code, constraints)        
+            return self.locally_execute_tests(code)        
         
-    def execute_tests(self, code, constraints):
+    def execute_tests(self, code):
         url = "http://127.0.0.1:8000/execute"
         payload = {
             "code": code, 
             "function_name": get_first_function_name(code),
             "test_cases": self.tests,
-            "constraints": Constraints(
-                    #create constraint object on game
-                )  
-            }
+            "constraints": self.constraints
+        }
         
         response = requests.post(url, json=payload).json()
-        print("RESPONSE", response)
         if response.get("status", "") != "success":
             return Results(
                 returncode=1,

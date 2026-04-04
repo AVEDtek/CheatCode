@@ -11,6 +11,7 @@ from better_profanity import profanity
 
 from backend.managers.timeManager import TimeManager
 from backend.managers.testRunner import TestRunner
+from backend.models.types import Constraints, TestCases, Problem, Results
 
 def _get_min_players_to_continue() -> int:
     raw = os.getenv("MIN_PLAYERS_TO_CONTINUE", "3")
@@ -22,10 +23,6 @@ def _get_min_players_to_continue() -> int:
 
 MIN_PLAYERS_TO_CONTINUE = _get_min_players_to_continue()
 
-class Constraints:
-    def __init__(self, allow_division: Optional[bool] = True):
-        self.allow_division = allow_division
-    allow_division: Optional[bool] = True
 
 class GameState(str, Enum):  
     BRIEFING = "briefing"      
@@ -38,20 +35,6 @@ class Message(TypedDict):
     message: str
     timestamp: float
 
-class Problem(TypedDict):
-    id: int
-    title: str
-    difficulty: str
-    description: str
-    examples: list
-    constraints: list
-    topics: list
-    code: str
-    constraint_keys: list
-
-class TestCycle(TypedDict):
-    input: list
-    expected: any
 
 class Commit(TypedDict):
     player_id: str
@@ -74,8 +57,8 @@ class Game:
         self.load_chat()
         self.commits = []
 
-        self.problem, self.test_cases = self.load_random_problem_and_test_cases()
-        self.test_runner = TestRunner(self.test_cases)
+        self.problem, self.test_cases, self.constraints = self.load_random_problem()
+        self.test_runner = TestRunner(self.test_cases, self.constraints)
 
     def start_timer(self):
         self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
@@ -88,7 +71,7 @@ class Game:
     def load_chat(self):
         self.add_message("System", "Chatroom is open. Keep your clues subtle.", time.time())
     
-    def load_random_problem_and_test_cases(self):
+    def load_random_problem(self) -> tuple[Problem, TestCases, Constraints]:
         file_path = 'backend/data/algorithm.json'
 
         with open(file_path) as f:
@@ -107,7 +90,7 @@ class Game:
             "topics": problem_data["topics"],
             "code": problem_data["code"],
             "test_cases": problem_data["test_cases"],
-            "constraint_keys": Constraints(
+            "constraint_list": Constraints(
                 allow_division= "no_division" not in constraints if constraints else False
             )
         }
@@ -120,13 +103,17 @@ class Game:
             "examples": problem["examples"],
             "constraints": problem["constraints"],
             "topics": problem["topics"],
-            "code": problem["code"],
-            "constraint_keys": problem["constraint_keys"]
+            "code": problem["code"]
         }
         
-        test_cases_obj: TestCycle = problem["test_cases"]
+        test_cases_obj: TestCases = problem["test_cases"]
+
+        constraints_objL: Constraints = {
+            "allow_division": "no_division" not in problem["constraint_list"] if problem.get("constraint_list", None) else False
+        }
+
         self.add_commit("System", problem["code"])
-        return problem_obj, test_cases_obj
+        return problem_obj, test_cases_obj, constraints_objL
 
     def add_commit(self, player_id, code):
         commit: Commit = {
@@ -146,12 +133,13 @@ class Game:
         self.chat.append(msg)
 
     def run_tests(self, code, constraints):
-        return self.test_runner.run_tests(code, constraints)
+        return self.test_runner.run_tests(code)
 
     def parse_results(self, result):
         try:
-            outputs = [r.get("output") for r in result.tests]
-            passed = [r.get("passed") for r in result.tests]
+            print("Raw test runner result:", result.tests)
+            outputs = [r.get("output") for r in result.tests.get("results", [])]
+            passed = [r.get("passed") for r in result.tests.get("results", [])]
             all_passed = all(passed)
             return outputs, passed, all_passed
         except json.JSONDecodeError:

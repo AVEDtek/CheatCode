@@ -5,8 +5,6 @@ import os
 from backend.managers.roomManager import RoomManager
 from backend.models.game import GameState
 
-room_manager = RoomManager()
-
 def _get_min_players_to_start() -> int:
     raw = os.getenv("MIN_PLAYERS_TO_START", "3")
     try:
@@ -16,6 +14,8 @@ def _get_min_players_to_start() -> int:
     return max(1, value)
 
 MIN_PLAYERS_TO_START = _get_min_players_to_start()
+
+room_manager = RoomManager()
 
 async def handle_disconnect(room_id, player_id):
     if (
@@ -252,7 +252,7 @@ async def handler(websocket):
 
                 if game.get_number_of_ready() == room.get_number_of_players():
                     await room.broadcast({
-                        "type": "briefing-over",
+                        "type": "briefing-over"
                     })
 
                     await game.set_coding()
