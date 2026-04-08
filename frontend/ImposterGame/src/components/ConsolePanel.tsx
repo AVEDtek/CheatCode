@@ -15,13 +15,16 @@ type ConsolePanelProps = {
 
 export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelProps) {
     const { onMessage } = useSocket();
-    const { testCycle } = useGame();
+    const { tests } = useGame();
 
     const [isResizing, setIsResizing] = useState<boolean>(false);
     const [highlightedCard, setHighlightedCard] = useState<number>(0);
     const [error, setError] = useState<boolean>(false);
     const [outputs, setOutputs] = useState<any[]>([]);
     const [passed, setPassed] = useState<boolean[]>([]);
+
+    const selectedTest = tests?.[highlightedCard];
+    const selectedOutput = outputs?.[highlightedCard];
 
     const formatOutput = (value: any) => {
         return value
@@ -80,8 +83,8 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
     return (
         <>
             <div
-                className={`bg-brand-gray text-gray-200 border-gray-700 overflow-y-auto custom-scrollbar ${isOpen ? "border-t" : "border-0"}`}
-                style={{ height: `${height}vh` }}
+                className={`min-h-0 shrink-0 overflow-y-auto overflow-x-hidden bg-brand-gray text-gray-200 border-gray-700 custom-scrollbar ${isOpen ? "border-t" : "border-0"}`}
+                style={{ height: `${height}%` }}
             >
                 <div
                     className="flex items-center justify-center cursor-row-resize h-5 text-gray-500 hover:text-gray-300 transition-colors duration-200"
@@ -102,14 +105,14 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
                     </div>
 
                     <div className="flex flex-wrap gap-1.5">
-                        {(testCycle ?? []).map((_, index) => (
-                            
+                        {(tests ?? []).map((_, index) => (
+
                             <div key={index}>
-                                {testCycle[index].visible ? 
+                                {tests[index].visible ?
                                     (passed.length > 0 ?
                                         <TestCard index={index} passed={passed[index]} highlight={index === highlightedCard} handleCardClick={handleCardClick} /> :
                                         <TestCard index={index} highlight={index === highlightedCard} handleCardClick={handleCardClick} />)
-                                : null}
+                                    : null}
                             </div>
                         ))}
                     </div>
@@ -117,7 +120,7 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
                     <div className="rounded-xl border border-gray-700 bg-brand-gray-light/40 p-4">
                         <p className="text-xs uppercase tracking-widest font-semibold text-gray-500 mb-2">Input</p>
                         <pre className="bg-brand-gray-light text-gray-300 p-3 rounded-xl min-h-10 font-mono text-sm whitespace-pre-wrap break-words border border-gray-700">
-                            {Object.entries(testCycle[highlightedCard].input)
+                            {Object.entries(selectedTest?.input ?? {})
                                 .map(([key, value]) => `${key}: ${JSON.stringify(value, null, 2)}`)
                                 .join(", ")}
                         </pre>
@@ -126,16 +129,16 @@ export default function ConsolePanel({ height, isOpen, onResize }: ConsolePanelP
                     <div className="rounded-xl border border-gray-700 bg-brand-gray-light/40 p-4">
                         <p className="text-xs uppercase tracking-widest font-semibold text-gray-500 mb-2">Output</p>
                         {error ?
-                            <pre className="p-3 rounded-xl min-h-10 whitespace-pre-wrap break-words text-sm font-mono bg-red-950/40 text-red-300 border border-red-900/60">{formatOutput(outputs[highlightedCard])}</pre> :
-                            <pre className="bg-brand-gray-light text-gray-300 p-3 rounded-xl min-h-10 font-mono text-sm whitespace-pre-wrap break-words border border-gray-700">
-                                {JSON.stringify(outputs[highlightedCard], null, 2)}
+                            <pre className="max-h-[32vh] overflow-auto custom-scrollbar p-3 rounded-xl min-h-10 whitespace-pre-wrap break-all text-sm font-mono bg-red-950/40 text-red-300 border border-red-900/60">{formatOutput(selectedOutput ?? "")}</pre> :
+                            <pre className="max-h-[32vh] overflow-auto custom-scrollbar bg-brand-gray-light text-gray-300 p-3 rounded-xl min-h-10 font-mono text-sm whitespace-pre-wrap break-words border border-gray-700">
+                                {JSON.stringify(selectedOutput, null, 2)}
                             </pre>}
                     </div>
 
                     <div className="rounded-xl border border-gray-700 bg-brand-gray-light/40 p-4">
                         <p className="text-xs uppercase tracking-widest font-semibold text-gray-500 mb-2">Expected Result</p>
                         <pre className="bg-brand-gray-light text-gray-300 p-3 rounded-xl min-h-10 font-mono text-sm whitespace-pre-wrap break-words border border-gray-700">
-                            {JSON.stringify(testCycle[highlightedCard].expected, null, 2)}
+                            {JSON.stringify(selectedTest?.expected, null, 2)}
                         </pre>
                     </div>
                 </div>

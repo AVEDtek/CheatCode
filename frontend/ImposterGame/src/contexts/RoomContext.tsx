@@ -16,6 +16,14 @@ type RoomContextValue = {
     setRoomId: React.Dispatch<React.SetStateAction<string>>;
     username: string;
     setUsername: React.Dispatch<React.SetStateAction<string>>;
+    difficulty: string;
+    setDifficulty: React.Dispatch<React.SetStateAction<string>>;
+    capacity: number;
+    setCapacity: React.Dispatch<React.SetStateAction<number>>;
+    codingTime: number;
+    setCodingTime: React.Dispatch<React.SetStateAction<number>>;
+    votingTime: number;
+    setVotingTime: React.Dispatch<React.SetStateAction<number>>;
     players: string[];
     setPlayers: React.Dispatch<React.SetStateAction<string[]>>;
 };
@@ -25,6 +33,14 @@ const RoomContext = createContext<RoomContextValue>({
     setRoomId: (_roomId: React.SetStateAction<string>) => { },
     username: "",
     setUsername: (_username: React.SetStateAction<string>) => { },
+    difficulty: "",
+    setDifficulty: (_difficulty: React.SetStateAction<string>) => { },
+    capacity: 0,
+    setCapacity: (_capacity: React.SetStateAction<number>) => { },
+    codingTime: 0,
+    setCodingTime: (_codingTime: React.SetStateAction<number>) => { },
+    votingTime: 0,
+    setVotingTime: (_votingTime: React.SetStateAction<number>) => { },
     players: [],
     setPlayers: (_players: React.SetStateAction<string[]>) => { }
 });
@@ -34,6 +50,10 @@ export default function RoomProvider({ children }: RoomProviderProps) {
 
     const [roomId, setRoomId] = useState<string>("");
     const [username, setUsername] = useState<string>("");
+    const [difficulty, setDifficulty] = useState<string>("");
+    const [capacity, setCapacity] = useState<number>(0);
+    const [codingTime, setCodingTime] = useState<number>(0);
+    const [votingTime, setVotingTime] = useState<number>(0);
     const [players, setPlayers] = useState<string[]>([]);
 
     useEffect(() => {
@@ -51,6 +71,14 @@ export default function RoomProvider({ children }: RoomProviderProps) {
         setRoomId,
         username,
         setUsername,
+        difficulty,
+        setDifficulty,
+        capacity,
+        setCapacity,
+        codingTime,
+        setCodingTime,
+        votingTime,
+        setVotingTime,
         players,
         setPlayers
     }

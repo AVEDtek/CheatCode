@@ -1,13 +1,14 @@
 {
     "problems": [
         {
-            "id": 1,
+            "id": 0,
             "title": "Two Sum",
+            "type": "Algorithm",
             "difficulty": "Easy",
-            "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.",
+            "description": "You are given a list of integers and a target value. Find the indices of two distinct elements in the list whose sum equals the target. You may assume exactly one valid pair exists, and you cannot use the same element twice. If no pair exists, return an empty list.",
             "examples": [
-                "Input: nums = [2,7,11,15], target = 9\nOutput: [0,1]",
-                "Input: nums = [3,2,4], target = 6\nOutput: [1,2]",
+                "Input: nums = [4,5,11,20], target = 9\nOutput: [0,1]",
+                "Input: nums = [0,6,8], target = 6\nOutput: [0,1]",
                 "Input: nums = [3,3], target = 6\nOutput: [0,1]"
             ],
             "constraints": [
@@ -20,54 +21,166 @@
                 "Arrays & Hashing"
             ],
             "code": "def twoSum(nums, target):\n    # Write your solution here\n    pass",
-            "testCycle": [
+            "tests": [
                 {
-                    "input": {
-                        "nums": [
-                            2,
-                            7,
+                    "input": [
+                        [
+                            4,
+                            5,
                             11,
-                            15
+                            20
                         ],
-                        "target": 9
-                    },
+                        9
+                    ],
                     "expected": [
                         0,
                         1
-                    ]
+                    ],
+                    "visible": true
                 },
                 {
-                    "input": {
-                        "nums": [
-                            3,
-                            2,
-                            4
+                    "input": [
+                        [
+                            6,
+                            0,
+                            8
                         ],
-                        "target": 6
-                    },
+                        6
+                    ],
                     "expected": [
-                        1,
-                        2
-                    ]
+                        0,
+                        1
+                    ],
+                    "visible": true
                 },
                 {
-                    "input": {
-                        "nums": [
+                    "input": [
+                        [
                             3,
                             3
                         ],
-                        "target": 6
-                    },
+                        6
+                    ],
                     "expected": [
                         0,
                         1
-                    ]
+                    ],
+                    "visible": true
+                },
+                {
+                    "input": [
+                        [
+                            3,
+                            3
+                        ],
+                        6
+                    ],
+                    "expected": [
+                        0,
+                        1
+                    ],
+                    "visible": false
+                },
+                {
+                    "input": [
+                        [
+                            -1,
+                            -2,
+                            -3,
+                            -4,
+                            -5
+                        ],
+                        -8
+                    ],
+                    "expected": [
+                        2,
+                        4
+                    ],
+                    "visible": false
+                },
+                {
+                    "input": [
+                        [
+                            -3,
+                            4,
+                            3,
+                            90
+                        ],
+                        0
+                    ],
+                    "expected": [
+                        0,
+                        2
+                    ],
+                    "visible": false
+                },
+                {
+                    "input": [
+                        [
+                            0,
+                            4,
+                            3,
+                            0
+                        ],
+                        0
+                    ],
+                    "expected": [
+                        0,
+                        3
+                    ],
+                    "visible": false
+                },
+                {
+                    "input": [
+                        [
+                            1,
+                            5,
+                            3,
+                            11,
+                            9,
+                            2,
+                            8
+                        ],
+                        10
+                    ],
+                    "expected": [
+                        0,
+                        4
+                    ],
+                    "visible": false
+                },
+                {
+                    "input": [
+                        [
+                            1,
+                            2
+                        ],
+                        3
+                    ],
+                    "expected": [
+                        0,
+                        1
+                    ],
+                    "visible": false
+                },
+                {
+                    "input": [
+                        [
+                            1,
+                            2,
+                            3
+                        ],
+                        7
+                    ],
+                    "expected": [],
+                    "visible": false
                 }
             ]
         },
         {
-            "id": 2,
+            "id": 1,
             "title": "Longest Substring Without Repeating Characters",
+            "type": "Algorithm",
             "difficulty": "Medium",
             "description": "Given a string s, find the length of the longest substring without repeating characters.",
             "examples": [
@@ -83,30 +196,34 @@
                 "Sliding Window"
             ],
             "code": "def lengthOfLongestSubstring(s):\n    # Write your solution here\n    pass",
-            "testCycle": [
+            "tests": [
                 {
-                    "input": {
-                        "s": "abcabcbb"
-                    },
-                    "expected": 3
+                    "input": [
+                        "abcabcbb"
+                    ],
+                    "expected": 3,
+                    "visible": true
                 },
                 {
-                    "input": {
-                        "s": "bbbbb"
-                    },
-                    "expected": 1
+                    "input": [
+                        "bbbbb"
+                    ],
+                    "expected": 1,
+                    "visible": true
                 },
                 {
-                    "input": {
-                        "s": "pwwkew"
-                    },
-                    "expected": 3
+                    "input": [
+                        "pwwkew"
+                    ],
+                    "expected": 3,
+                    "visible": true
                 }
             ]
         },
         {
-            "id": 3,
+            "id": 2,
             "title": "Minimum Window Substring",
+            "type": "Algorithm",
             "difficulty": "Hard",
             "description": "Given two strings s and t of lengths m and n respectively, return the minimum window substring of s such that every character in t (including duplicates) is included in the window. If there is no such substring, return the empty string \"\".",
             "examples": [
@@ -122,27 +239,30 @@
                 "Sliding Window"
             ],
             "code": "def minWindow(s, t):\n    # Write your solution here\n    pass",
-            "testCycle": [
+            "tests": [
                 {
-                    "input": {
-                        "s": "ADOBECODEBANC",
-                        "t": "ABC"
-                    },
-                    "expected": "BANC"
+                    "input": [
+                        "ADOBECODEBANC",
+                        "ABC"
+                    ],
+                    "expected": "BANC",
+                    "visible": true
                 },
                 {
-                    "input": {
-                        "s": "a",
-                        "t": "a"
-                    },
-                    "expected": "a"
+                    "input": [
+                        "a",
+                        "a"
+                    ],
+                    "expected": "a",
+                    "visible": true
                 },
                 {
-                    "input": {
-                        "s": "a",
-                        "t": "aa"
-                    },
-                    "expected": ""
+                    "input": [
+                        "a",
+                        "aa"
+                    ],
+                    "expected": "",
+                    "visible": true
                 }
             ]
         }

@@ -1,6 +1,6 @@
 import { useSocket } from "../contexts/SocketContext.tsx";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useRoom } from "../contexts/RoomContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
@@ -13,6 +13,7 @@ export default function ProblemPanel() {
 
     const [activeTab, setActiveTab] = useState<"problem" | "chatroom">("problem");
     const [message, setMessage] = useState<string>("");
+    const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
     const { roomId, username, players } = useRoom();
     const { imposter, problem, chat } = useGame();
@@ -35,6 +36,14 @@ export default function ProblemPanel() {
         send(request);
         setMessage("");
     };
+
+    useEffect(() => {
+        if (activeTab !== "chatroom") return;
+        const chatContainer = chatContainerRef.current;
+        if (!chatContainer) return;
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }, [activeTab, chat]);
 
     if (!problem || problem.title === "" || problem.description === "" || problem.difficulty === "") {
         return null;
@@ -157,7 +166,7 @@ export default function ProblemPanel() {
                             </div>
                         </div>
 
-                        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-3 pr-1 w-full min-w-0">
+                        <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-3 pr-1 w-full min-w-0">
                             {chat.map((message: any, index: number) => {
                                 if (message.sender === "System") {
                                     return (

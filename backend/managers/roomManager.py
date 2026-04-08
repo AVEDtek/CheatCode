@@ -15,9 +15,9 @@ class RoomManager:
             if room_id not in self.rooms:
                 return room_id
 
-    def create_room(self):
+    def create_room(self, difficulty, capacity, coding_time, voting_time):
         room_id = self.generate_random_id()
-        self.rooms[room_id] = Room(room_id)
+        self.rooms[room_id] = Room(room_id, difficulty, capacity, coding_time, voting_time)
         return room_id
 
     def start_game_in_room(self, room_id):

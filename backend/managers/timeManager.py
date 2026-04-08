@@ -1,20 +1,20 @@
 import asyncio
 
-BRIEFING_DURATION = 30
-CODING_DURATION = 300
-TURN_DURATION = 30
-VOTING_DURATION = 120
-
 class TimeManager:
-    def __init__(self, game, room):
+    def __init__(self, game, room, coding_time, voting_time):
         self.game = game
         self.room = room
+
+        self.BRIEFING_DURATION = 30
+        self.CODING_DURATION = coding_time
+        self.TURN_DURATION = 30
+        self.VOTING_DURATION = voting_time
 
         self.briefing_timer_task = None
         self.coding_timer_task = None
         self.voting_timer_task = None
 
-        self.num_rounds = CODING_DURATION // TURN_DURATION
+        self.num_rounds = self.CODING_DURATION // self.TURN_DURATION
 
     async def stop_briefing_timer(self):
         if self.briefing_timer_task and not self.briefing_timer_task.done():
@@ -26,7 +26,7 @@ class TimeManager:
         self.briefing_timer_task = None
 
     async def start_briefing_timer(self):
-        briefing_time_left = BRIEFING_DURATION
+        briefing_time_left = self.BRIEFING_DURATION
         try:
             while briefing_time_left > 0:
                 await self.room.broadcast({
@@ -55,10 +55,10 @@ class TimeManager:
         self.coding_timer_task = None
 
     async def start_coding_timer(self):
-        coding_time_left = CODING_DURATION
+        coding_time_left = self.CODING_DURATION
         try:
             while coding_time_left > 0:
-                turn_time_left = TURN_DURATION
+                turn_time_left = self.TURN_DURATION
                 while turn_time_left > 0:
                     await self.room.broadcast({
                         "type": "coding-time-left",
@@ -84,7 +84,7 @@ class TimeManager:
         self.voting_timer_task = None
 
     async def start_voting_timer(self):
-        voting_time_left = VOTING_DURATION
+        voting_time_left = self.VOTING_DURATION
         try:
             while voting_time_left > 0:
                 await self.room.broadcast({

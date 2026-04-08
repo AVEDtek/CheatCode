@@ -26,8 +26,8 @@ class Results:
         self.tests = tests
 
 class TestRunner:
-    def __init__(self, testCases):
-        self.tests = testCases
+    def __init__(self, tests):
+        self.tests = tests
 
     def run_tests(self, code):
         #check if server is running. if not run locally (for dev, in production this should throw a server error that we can catch and display to the user)
@@ -35,7 +35,6 @@ class TestRunner:
         try:
             response = requests.post(url)
             response = response.json()
-            print("Server response:", response)
             if response.get("status") == "ok":
                 return self.execute_tests(code)
             else:
@@ -131,9 +130,9 @@ class TestRunner:
                             "passed": False
                         }})
 
-                print(json.dumps(results))
+                print(json.dumps(results, ensure_ascii=False))
+
             """).lstrip()
-            print(f"{tests_json!r}")
 
             runner_path = os.path.join(tmpdir, "testRunner.py")
             with open(runner_path, "w") as f:
@@ -146,10 +145,18 @@ class TestRunner:
                 text=True,
                 timeout=5
             )
+
+            parsed_results = []
+            if result.stdout.strip():
+                try:
+                    parsed_results = json.loads(result.stdout)
+                except json.JSONDecodeError:
+                    pass
+
             result_data = Results(
                 returncode=result.returncode,
                 stdout=result.stdout,
                 stderr=result.stderr,
-                tests={'passed': False, 'results': json.loads(result.stdout)}
+                tests={'passed': False, 'results': parsed_results}
             )
             return result_data

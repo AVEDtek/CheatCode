@@ -10,9 +10,8 @@ from better_profanity import profanity
 
 from backend.managers.timeManager import TimeManager
 from backend.managers.testRunner import TestRunner
-from backend.models.roomConfig import roomConfig
 
-def _get_min_players_to_continue() -> int:
+def _get_min_players_to_continue():
     raw = os.getenv("MIN_PLAYERS_TO_CONTINUE", "3")
     try:
         value = int(raw)
@@ -43,22 +42,17 @@ class Problem(TypedDict):
     topics: list
     code: str
 
-class TestCycle(TypedDict):
-    input: list
-    expected: any
-
 class Commit(TypedDict):
     player_id: str
     code: str
 
 class Game:
-    def __init__(self, players, room, config):
+    def __init__(self, room, players, difficulty, coding_time, voting_time):
         self.room = room
-        self.config = config
 
         self.state = GameState.BRIEFING
 
-        self.time_manager = TimeManager(self, room)
+        self.time_manager = TimeManager(self, room, coding_time, voting_time)
         self.start_timer()
 
         self.players = players
@@ -66,71 +60,42 @@ class Game:
         self.current_player_idx = 0
 
         self.chat = []
-        self.load_chat()
+        self.init_chat()
         self.commits = []
 
-        self.problem, self.test_cycle = self.load_random_problem_and_test_cycle(config.difficulty_range)
-        self.test_runner = TestRunner(self.test_cycle)
-    
-    async def start_game(self):
-        self.addMessage("System", f"{self.players[self.current_player_idx].id}'s turn to code", time.time())
-        self.timer_task = asyncio.create_task(self.start_timer(30))
+        self.problem, self.tests = self.init_random_problem_and_tests(difficulty)
+        self.test_runner = TestRunner(self.tests)
 
-    def assign_imposter(self):
+    def start_timer(self):
+        self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
+    
+    def init_players(self):
+        random.shuffle(self.players)
         imposter = random.choice(self.players)
         imposter.set_imposter()
 
-    def load_chat(self):
-        self.add_message("System", "Chatroom is open. Keep your clues subtle.", time.time())
+    def init_chat(self):
+        msg: Message = {
+            "sender": "System",
+            "message": "Chatroom is open. Keep your clues subtle.",
+            "timestamp": time.time()
+        }
+        self.chat.append(msg)
     
-    def load_random_problem_and_test_cycle(self, difficulty_range=None):
-        if difficulty_range is None:
-            difficulty_range = ['easy', 'medium', 'hard']
-
-
+    def init_random_problem_and_tests(self, difficulty):
         file_path = 'backend/data/problems.json'
 
         with open(file_path) as f:
             data = json.load(f)
 
-        problem_id = random.randrange(0, len(data["problems"]))
-
-        problem_data = data["problems"][problem_id]
-        problem = {
-            "title": problem_data["title"],
-            "difficulty": problem_data["difficulty"],
-            "description": problem_data["description"],
-            "examples": problem_data["examples"],
-            "constraints": problem_data["constraints"],
-            "topics": problem_data["topics"],
-            "code": problem_data["code"],
-            "test_cases": problem_data["test_cases"]
-        }
-
-        # you pick from the pool of problems that match the difficulty range, if none match you pick from the whole pool
-        pool = []
-        for p in problems.values():
-            if p["difficulty"].lower() in difficulty_range:
-                pool.append(p)
-
-        if not pool:
-            pool = list(problems.values())
-
-        print(f"difficulty_range received: {difficulty_range}")
-        print(f"pool size: {len(pool)}")
-        print(f"pool difficulties: {[p['difficulty'] for p in pool]}")
-
-        problem = random.choice(pool)
-
-        # find the id for this problem
-        problem_id = None
-        for pid, p in problems.items():
-            if p["title"] == problem["title"]:  # match by title, not object identity
-                problem_id = pid
-                break
+        problem_pool = [
+            problem for problem in data["problems"]
+            if problem["difficulty"] == difficulty
+        ]
+        problem = random.choice(problem_pool)
 
         problem_obj: Problem = {
-            "id": problem_id,
+            "id": problem["id"],
             "title": problem["title"], 
             "difficulty": problem["difficulty"],
             "description": problem["description"],
@@ -139,10 +104,9 @@ class Game:
             "topics": problem["topics"],
             "code": problem["code"]
         }
-        #How does the test obj work?
-        test_cases_obj: TestCycle = problem["test_cases"]
+        tests_obj = problem["tests"]
         self.add_commit("System", problem["code"])
-        return problem_obj, test_cases_obj
+        return problem_obj, tests_obj
 
     def add_commit(self, player_id, code):
         commit: Commit = {
@@ -151,7 +115,7 @@ class Game:
         }
         self.commits.append(commit)
 
-    def add_message(self, sender, message, timestamp):
+    async def add_message(self, sender, message, timestamp):
         message = profanity.censor(message, "*")
 
         msg: Message = {
@@ -160,6 +124,12 @@ class Game:
             "timestamp": timestamp
         }
         self.chat.append(msg)
+
+        response = {
+            "type": "chat-update",
+            "chat": self.get_chat()
+        }
+        await self.room.broadcast(response)
 
     def run_tests(self, code):
         return self.test_runner.run_tests(code)
@@ -171,10 +141,10 @@ class Game:
             all_passed = all(passed)
             return outputs, passed, all_passed
         except json.JSONDecodeError:
-            return [None] * len(self.test_cases), [False] * len(self.test_cases), False
+            return [None] * len(self.tests), [False] * len(self.tests), False
 
-    def cast_vote(self, voter_id, voted_id):
-        self.add_message("System", f"{voter_id} has cast their vote.", time.time())
+    async def cast_vote(self, voter_id, voted_id):
+        await self.add_message("System", f"{voter_id} has cast their vote.", time.time())
         for player in self.players:
             if player.id == voted_id:
                 player.add_vote()
@@ -204,8 +174,7 @@ class Game:
             response = {
                 "type": "coding-over",
                 "commits": self.get_commits(),
-                "votes": self.get_votes(),
-                "chat": self.get_chat()
+                "votes": self.get_votes()
             }
 
             await self.room.broadcast(response)
@@ -213,12 +182,12 @@ class Game:
             await self.set_voting()
         else:
             self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
-            self.add_message("System", f"{self.players[self.current_player_idx].id}'s turn to code.", time.time())
+            await self.add_message("System", f"{self.players[self.current_player_idx].id}'s turn to code.", time.time())
 
     async def set_voting(self):
         await self.time_manager.stop_coding_timer()
         self.state = GameState.VOTING
-        self.add_message("System", "Voting has begun. Vote for the imposter!", time.time())
+        await self.add_message("System", "Voting has begun. Vote for the imposter!", time.time())
         self.time_manager.voting_timer_task = asyncio.create_task(self.time_manager.start_voting_timer())
 
     async def set_results(self):
@@ -252,8 +221,8 @@ class Game:
     def get_problem(self):
         return self.problem
 
-    def get_test_cases(self):
-        return self.test_cases
+    def get_tests(self):
+        return self.tests
 
     def get_commits(self):
         return self.commits
@@ -270,6 +239,9 @@ class Game:
     async def handle_player_disconnect(self, player_id):
         disconnected_index = next((i for i, player in enumerate(self.players) if player.id == player_id), -1)
         if disconnected_index == -1:
+            return
+        if self.state == GameState.RESULTS:
+            self.players.pop(disconnected_index)
             return
         
         was_imposter = self.players[disconnected_index].is_imposter()
@@ -291,7 +263,7 @@ class Game:
             await self.time_manager.stop_all_timers()
             return
 
-        self.add_message("System", f"{player_id} disconnected.", time.time())
+        await self.add_message("System", f"{player_id} disconnected.", time.time())
 
         if disconnected_index < self.current_player_idx:
             self.current_player_idx -= 1
@@ -306,7 +278,7 @@ class Game:
             await self.set_coding()
 
         if self.state == GameState.CODING and was_current_player:
-            self.add_message("System", f"{self.players[self.current_player_idx].id}'s turn to code.", time.time())
+            await self.add_message("System", f"{self.players[self.current_player_idx].id}'s turn to code.", time.time())
 
         if self.state == GameState.VOTING and self.get_number_of_votes() >= len(self.players):
             response = {

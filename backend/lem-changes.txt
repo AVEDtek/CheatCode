@@ -1,3 +1,0 @@
-For the room config:
-    Question difficulty
-    master time

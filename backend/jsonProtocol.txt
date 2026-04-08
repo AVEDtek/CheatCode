@@ -6,9 +6,17 @@ For example, a request to create a room would have 'type' : 'create-room'
 Frontend -> Backend:
     Request: create-room
         playerId
+        difficulty
+        capacity
+        codingTime
+        votingTime
     Response: room-created
         roomId
         playerId
+        difficulty
+        capacity
+        codingTime
+        votingTime
 
     Request: join-room
         roomId
@@ -16,6 +24,10 @@ Frontend -> Backend:
     Response: room-joined
         roomId
         playerId
+        difficulty
+        capacity
+        codingTime
+        votingTime
         playerList
     Response: unable-to-join
         errorMessage
@@ -31,8 +43,7 @@ Frontend -> Backend:
         imposterId
         chat
         problem
-        testCycle
-        masterTimer # int (seconds) total coding phase duration
+        tests
 
     Request: set-ready
         roomId
@@ -45,8 +56,6 @@ Frontend -> Backend:
         playerId
         message
         timestamp
-    Response: chat-update
-        chat
 
     Request: new-code
         roomId
@@ -54,7 +63,7 @@ Frontend -> Backend:
     Response: new-code
         code
 
-    Request: run-test-cycle
+    Request: run-tests
         roomId
         playerId
         code 
@@ -70,7 +79,6 @@ Frontend -> Backend:
     Response: next-turn
         playerId
         code
-        chat
 
     Request: cast-vote
         roomId
@@ -78,15 +86,6 @@ Frontend -> Backend:
         votedId
     Response: vote-casted
         votes
-        chat
-
-    Request: update-config
-        roomId
-        difficultyRange        # list e.g. ["medium", "hard"]
-        masterTimer            # int (seconds)
-    Response: config-updated
-        difficultyRange
-        masterTimer
 
 Backend -> Frontend
     Message: room-players-update
@@ -95,6 +94,8 @@ Backend -> Frontend
     Message: game-players-update
         playerList
         playerId
+
+    Message: chat-update
         chat
 
     Message: briefing-time-left
@@ -111,7 +112,6 @@ Backend -> Frontend
     Message: coding-over
         commits
         votes
-        chat
 
     Message: voting-time-left
         votingTimeLeft

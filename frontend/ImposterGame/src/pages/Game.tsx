@@ -21,20 +21,20 @@ type GameLocationState = {
     imposter: string;
     chat: any[];
     problem: any;
-    testCycle: any[];
+    tests: any[];
     code: string;
 };
 
 export default function Game() {
     const {
-        gameError, 
+        gameError,
         gameState,
         setPlayers,
         setCurrentPlayer,
         setImposter,
         setChat,
         setProblem,
-        setTestCycle,
+        setTests,
         setCode
     } = useGame();
 
@@ -50,7 +50,7 @@ export default function Game() {
         setImposter(navState.imposter);
         setChat(navState.chat);
         setProblem(navState.problem);
-        setTestCycle(navState.testCycle);
+        setTests(navState.tests);
         setCode(navState.code);
     }, [navState]);
 

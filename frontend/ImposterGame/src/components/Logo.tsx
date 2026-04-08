@@ -25,7 +25,7 @@ export default function Logo() {
     return (
         <>
             <h1 onClick={() => onLogoClick()} className="text-2xl font-extrabold tracking-tight cursor-pointer">
-                <span className="text-purple-500">Cheet</span>
+                <span className="text-purple-500">Cheat</span>
                 <span className="text-white">Code</span>
             </h1>
         </>

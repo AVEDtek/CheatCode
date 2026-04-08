@@ -23,7 +23,6 @@ export default function VoteBar({ voting }: VoteBarProps) {
     const [selectedUser, setSelectedUser] = useState<string>("");
 
     useEffect(() => {
-        console.log("Players updated:", players);
         if (!players.includes(selectedUser)) {
             setSelectedUser("");
             setVoted(false);

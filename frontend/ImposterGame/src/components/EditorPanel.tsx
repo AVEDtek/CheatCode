@@ -15,7 +15,7 @@ export default function EditorPanel() {
     const { currentPlayer, code, setCode } = useGame();
 
     const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
-    const [editorHeight, setEditorHeight] = useState<number>(75);
+    const [editorHeight, setEditorHeight] = useState<number>(100);
     const [consoleHeight, setConsoleHeight] = useState<number>(0);
 
     const handleEditorChange = (code: string | undefined) => {
@@ -41,7 +41,7 @@ export default function EditorPanel() {
             return;
         }
         const request = {
-            type: "run-test-cycle",
+            type: "run-tests",
             roomId: roomId,
             playerId: username,
             code: code
@@ -55,18 +55,18 @@ export default function EditorPanel() {
     const toggleConsole = () => {
         if (!isConsoleOpen) {
             setIsConsoleOpen(true);
-            setEditorHeight(50);
-            setConsoleHeight(25);
+            setEditorHeight(65);
+            setConsoleHeight(35);
         } else {
             setIsConsoleOpen(false);
-            setEditorHeight(75);
+            setEditorHeight(100);
             setConsoleHeight(0);
         }
     };
 
     const handleConsoleResize = (newHeight: number) => {
         setConsoleHeight(newHeight);
-        setEditorHeight(75 - newHeight);
+        setEditorHeight(100 - newHeight);
     };
 
     return (
@@ -85,15 +85,17 @@ export default function EditorPanel() {
                 </div>
                 {currentPlayer === username ? (
                     <div className="flex flex-1 flex-col min-h-0">
-                        <Editor
-                            height={`${editorHeight}vh`}
-                            width="100%"
-                            defaultLanguage="python"
-                            defaultValue="// Start coding..."
-                            theme="vs-dark"
-                            value={code}
-                            onChange={handleEditorChange}
-                        />
+                        <div className="min-h-0" style={{ height: `${editorHeight}%` }}>
+                            <Editor
+                                height="100%"
+                                width="100%"
+                                defaultLanguage="python"
+                                defaultValue="// Start coding..."
+                                theme="vs-dark"
+                                value={code}
+                                onChange={handleEditorChange}
+                            />
+                        </div>
                         <ConsolePanel
                             height={consoleHeight}
                             isOpen={isConsoleOpen}

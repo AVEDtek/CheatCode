@@ -46,8 +46,8 @@ type GameContextValue = {
     setChat: React.Dispatch<React.SetStateAction<any[]>>;
     problem: any;
     setProblem: React.Dispatch<React.SetStateAction<any>>;
-    testCycle: any[];
-    setTestCycle: React.Dispatch<React.SetStateAction<any[]>>;
+    tests: any[];
+    setTests: React.Dispatch<React.SetStateAction<any[]>>;
     code: string;
     setCode: React.Dispatch<React.SetStateAction<string>>;
     commits: any[];
@@ -87,8 +87,8 @@ const GameContext = createContext<GameContextValue>({
     setChat: (_chat: React.SetStateAction<any[]>) => { },
     problem: null,
     setProblem: (_problem: React.SetStateAction<any>) => { },
-    testCycle: [],
-    setTestCycle: (_testCycle: React.SetStateAction<any[]>) => { },
+    tests: [],
+    setTests: (_tests: React.SetStateAction<any[]>) => { },
     code: "",
     setCode: (_code: React.SetStateAction<string>) => { },
     commits: [],
@@ -123,7 +123,7 @@ export default function GameProvider({ children }: GameProviderProps) {
     const [chat, setChat] = useState<any[]>([]);
 
     const [problem, setProblem] = useState<any>(null);
-    const [testCycle, setTestCycle] = useState<any[]>([]);
+    const [tests, setTests] = useState<any[]>([]);
     const [code, setCode] = useState<string>("");
 
     const [commits, setCommits] = useState<any[]>([]);
@@ -171,7 +171,6 @@ export default function GameProvider({ children }: GameProviderProps) {
         const unsubNextTurn = onMessage("next-turn", (data) => {
             setCurrentPlayer(data.playerId);
             setCode(data.code);
-            setChat(data.chat);
         });
         const unsubChatUpdate = onMessage("chat-update", (data) => {
             setChat(data.chat);
@@ -179,11 +178,9 @@ export default function GameProvider({ children }: GameProviderProps) {
         const unsubCodingOver = onMessage("coding-over", (data) => {
             setGameState(GameState.Voting);
             setCommits(data.commits);
-            setChat(data.chat);
         });
         const unsubVoteCasted = onMessage("vote-casted", (data) => {
             setVotes(data.voteList);
-            setChat(data.chat);
         });
         const unsubVotingOver = onMessage("voting-over", (data) => {
             setGameState(GameState.Results);
@@ -193,7 +190,6 @@ export default function GameProvider({ children }: GameProviderProps) {
         const unsubPlayersUpdate = onMessage("game-players-update", (data) => {
             setPlayers(data.playerList);
             setCurrentPlayer(data.playerId);
-            setChat(data.chat);
         });
         return () => {
             unsubImposterDisconnected();
@@ -241,8 +237,8 @@ export default function GameProvider({ children }: GameProviderProps) {
         setChat,
         problem,
         setProblem,
-        testCycle,
-        setTestCycle,
+        tests,
+        setTests,
         code,
         setCode,
         commits,

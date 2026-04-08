@@ -12,7 +12,7 @@ export default function Info({ onInfoExitClick }: InfoProps) {
                     <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-700">
                         <div className="flex items-center gap-2">
                             <div className="w-1 h-5 bg-purple-600 rounded-full" />
-                            <h1 className="text-xl text-gray-100 font-bold">About CheetCode</h1>
+                            <h1 className="text-xl text-gray-100 font-bold">About CheatCode</h1>
                         </div>
                         <button
                             type="button"
@@ -26,7 +26,7 @@ export default function Info({ onInfoExitClick }: InfoProps) {
 
                     <div className="px-6 py-5 space-y-4 text-sm text-gray-400 leading-relaxed">
                         <p>
-                            CheetCode is a social deduction coding game. Everyone appears to solve the same problem,
+                            CheatCode is a social deduction coding game. Everyone appears to solve the same problem,
                             but one player is the imposter and never sees the full prompt.
                         </p>
 

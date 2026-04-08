@@ -27,7 +27,11 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
         state: {
           roomId: data.roomId,
           username: data.playerId,
-          players: data.playerList,
+          difficulty: data.difficulty,
+          capacity: data.capacity,
+          codingTime: data.codingTime,
+          votingTime: data.votingTime,
+          players: data.playerList
         },
       });
     });
