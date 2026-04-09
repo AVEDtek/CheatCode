@@ -2,96 +2,78 @@
 
 # CheetCode
 
-## 🧰 Python Backend Setup
+## Quick Start
 
-### 1. Create a virtual environment
+### 1. Backend setup
+
 ```bash
 cd backend
-```
-
-```bash
-python -m venv .venv
-```
-
-### 2. Activate it
-
-**Mac/Linux:**
-
-```bash
+python3 -m venv .venv
 source .venv/bin/activate
-```
-
-**Windows (PowerShell):**
-
-```bash
-.venv\Scripts\Activate.ps1
-```
-
-**Windows (cmd):**
-
-```bash
-.venv\Scripts\activate
-```
-
----
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
----
+Create a backend env file at the project root as `.env`:
 
-### 4. Run the project
+```env
+# Required if you use remote code execution service
+CHEATCODE_ENGINE_API_KEY=your_api_key_here
+
+# Game settings
+MIN_PLAYERS_TO_START=3
+MIN_PLAYERS_TO_CONTINUE=3
+
+# Backend server
+HOST=0.0.0.0
+PORT=8765
+
+# Security / limits
+ALLOW_LOCAL_TEST_EXECUTION=true
+MAX_WS_MESSAGE_BYTES=65536
+MAX_PLAYER_ID_LENGTH=24
+MAX_CHAT_MESSAGE_LENGTH=600
+MAX_CODE_LENGTH=30000
+HEALTH_ENDPOINT_ENABLED=false
+```
+
+Run backend from the repo root:
 
 ```bash
-python -m backend.server.py
-```
-
----
-
-## ➕ Adding New Dependencies
-
-Install a package:
-
-```bash
-pip install <package-name>
-```
-
-Update `requirements.txt`:
-
-```bash
-pip freeze > requirements.txt
-```
-
----
-
-## 🧠 Notes
-
-* `.venv/` should be in `.gitignore`
-* `requirements.txt` should be committed
-* Always activate `.venv` before installing or running anything
-
-
-
-## How to Start (localy) (may break if less than 2 players minimum)
-```
-# Run server
-
 source backend/.venv/bin/activate
-
-PORT=8765 MIN_PLAYERS_TO_START=1  MIN_PLAYERS_TO_CONTINUE=1 python3 -m backend.server
+python3 -m backend.server
 ```
 
-```
-# In a separate terminal, run frontend
+### 2. Frontend setup
 
+In a second terminal:
+
+```bash
 cd frontend/ImposterGame
-export VITE_BACKEND_URL=ws://localhost:8765
-export VITE_MIN_PLAYERS_TO_START=1   # optional but will permanently set to 1, switch back to 3
-npm install        # only needed once
+npm install
+```
+
+Create `frontend/ImposterGame/.env`:
+
+```env
+VITE_BACKEND_URL=ws://localhost:8765
+VITE_MIN_PLAYERS_TO_START=3
+```
+
+Run frontend:
+
+```bash
 npm run dev
+```
+
+Open the URL shown by Vite (usually `http://localhost:5173`).
+
+### 3. Local testing with fewer players
+
+For quick local testing, you can set both minimums to `1`:
+
+```env
+MIN_PLAYERS_TO_START=1
+MIN_PLAYERS_TO_CONTINUE=1
 ```
 
 ## Inspiration

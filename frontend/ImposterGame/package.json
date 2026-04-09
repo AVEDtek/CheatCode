@@ -20,6 +20,9 @@
     "react-router-dom": "^7.13.0",
     "tailwindcss": "^4.2.0"
   },
+  "overrides": {
+    "dompurify": "^3.3.2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",

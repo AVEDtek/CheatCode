@@ -2,7 +2,7 @@ import { useSocket } from "../contexts/SocketContext.tsx";
 import { useRoom } from "../contexts/RoomContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Editor from "@monaco-editor/react";
 import ConsolePanel from "./ConsolePanel.tsx";
@@ -10,13 +10,19 @@ import ConsolePanel from "./ConsolePanel.tsx";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 export default function EditorPanel() {
-    const { isConnected, send } = useSocket();
+    const { isConnected, send, onMessage } = useSocket();
     const { roomId, username } = useRoom();
     const { currentPlayer, code, setCode } = useGame();
 
     const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
     const [editorHeight, setEditorHeight] = useState<number>(100);
     const [consoleHeight, setConsoleHeight] = useState<number>(0);
+    const [isRunning, setIsRunning] = useState<boolean>(false);
+
+    useEffect(() => {
+        const unsub = onMessage("test-results", () => setIsRunning(false));
+        return () => unsub();
+    }, [onMessage]);
 
     const handleEditorChange = (code: string | undefined) => {
         if (code !== undefined) {
@@ -36,8 +42,8 @@ export default function EditorPanel() {
     };
 
     const runCode = () => {
-        if (!isConnected) {
-            console.error("Socket not connected");
+        if (!isConnected || isRunning) {
+            console.error("Socket not connected or tests already running");
             return;
         }
         const request = {
@@ -46,6 +52,7 @@ export default function EditorPanel() {
             playerId: username,
             code: code
         }
+        setIsRunning(true);
         send(request);
         if (!isConsoleOpen) {
             toggleConsole();
@@ -112,9 +119,14 @@ export default function EditorPanel() {
                             <button
                                 type="button"
                                 onClick={runCode}
-                                className="cursor-pointer px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-purple-700 hover:bg-purple-600 active:scale-95 transition-all duration-200"
+                                disabled={isRunning}
+                                className={`px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all duration-200 ${
+                                    isRunning
+                                        ? "cursor-not-allowed bg-purple-900 opacity-50"
+                                        : "cursor-pointer bg-purple-700 hover:bg-purple-600 active:scale-95"
+                                }`}
                             >
-                                Run
+                                {isRunning ? "Running..." : "Run"}
                             </button>
                         </div>
                     </div>

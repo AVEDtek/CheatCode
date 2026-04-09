@@ -2,20 +2,45 @@ import asyncio
 import websockets
 import json
 import os
+import re
+
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
+
 from backend.managers.roomManager import RoomManager
 from backend.models.game import GameState
 
-room_manager = RoomManager()
 
-def _get_min_players_to_start():
-    raw = os.getenv("MIN_PLAYERS_TO_START", "3")
+def _get_int_env(name: str, default: int, minimum: int) -> int:
+    raw = os.getenv(name, str(default))
     try:
         value = int(raw)
     except ValueError:
-        value = 3
-    return max(1, value)
+        value = default
+    return max(minimum, value)
+
+
+def _get_bool_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+def _get_min_players_to_start() -> int:
+    return _get_int_env("MIN_PLAYERS_TO_START", default=3, minimum=1)
 
 MIN_PLAYERS_TO_START = _get_min_players_to_start()
+MAX_WS_MESSAGE_BYTES = _get_int_env("MAX_WS_MESSAGE_BYTES", default=65536, minimum=1024)
+MAX_PLAYER_ID_LENGTH = _get_int_env("MAX_PLAYER_ID_LENGTH", default=24, minimum=3)
+MAX_CHAT_MESSAGE_LENGTH = _get_int_env("MAX_CHAT_MESSAGE_LENGTH", default=600, minimum=20)
+MAX_CODE_LENGTH = _get_int_env("MAX_CODE_LENGTH", default=30000, minimum=100)
+HEALTH_ENDPOINT_ENABLED = _get_bool_env("HEALTH_ENDPOINT_ENABLED", default=False)
+ROOM_ID_PATTERN = re.compile(r"^[A-Z0-9]{6}$")
+
+room_manager = RoomManager()
 
 async def handle_disconnect(room_id, player_id):
     if (
@@ -51,8 +76,6 @@ async def handle_disconnect(room_id, player_id):
 
 async def handler(websocket):
     print("Client connected")
-    connected_room_id = None
-    connected_player_id = None
 
     try:
         async for message in websocket:
@@ -220,7 +243,7 @@ async def handler(websocket):
 
                 game = room.create_game()
                 problem = game.get_problem()
-                tests = game.get_tests()
+                test_cases = game.get_tests()
 
                 response = {
                     "type": "game-started",
@@ -228,7 +251,7 @@ async def handler(websocket):
                     "imposterId": game.get_imposter_id(),
                     "chat": game.get_chat(),
                     "problem": problem,
-                    "tests": tests 
+                    "tests": test_cases
                 }
 
                 await room.broadcast(response)
@@ -276,7 +299,7 @@ async def handler(websocket):
 
                 if game.get_number_of_ready() == room.get_number_of_players():
                     await room.broadcast({
-                        "type": "briefing-over",
+                        "type": "briefing-over"
                     })
 
                     await game.set_coding()
@@ -417,9 +440,18 @@ async def handler(websocket):
                     await websocket.send("Coding not in progress")
                     continue
 
-                results = game.run_tests(code)              
-                if results.returncode != 0:
-                    outputs, passed = [results.stderr] * len(game.get_tests()), [False] * len(game.get_tests())
+                if game.tests_running:
+                    await websocket.send(json.dumps({"type": "tests-running"}))
+                    continue
+
+                game.tests_running = True
+                loop = asyncio.get_event_loop()
+                try:
+                    results = await loop.run_in_executor(None, game.run_tests, code)
+                finally:
+                    game.tests_running = False
+                if results["returncode"] != 0:
+                    outputs, passed = [results["stderr"]] * len(game.get_test_cases()), [False] * len(game.get_test_cases())
                     response = {
                         "type": "test-results",
                         "error": True,

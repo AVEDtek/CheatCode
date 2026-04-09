@@ -3,13 +3,21 @@ import json
 import time
 import asyncio
 import os
+from typing import Optional
+from pathlib import Path
 
 from enum import Enum
 from typing import TypedDict
 from better_profanity import profanity
+from dotenv import load_dotenv
 
 from backend.managers.timeManager import TimeManager
 from backend.managers.testRunner import TestRunner
+from backend.models.types import TestCases, Problem, Results
+
+
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env")
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
 def _get_min_players_to_continue():
     raw = os.getenv("MIN_PLAYERS_TO_CONTINUE", "3")
@@ -20,6 +28,7 @@ def _get_min_players_to_continue():
     return max(1, value)
 
 MIN_PLAYERS_TO_CONTINUE = _get_min_players_to_continue()
+
 
 class GameState(str, Enum):  
     BRIEFING = "briefing"      
@@ -32,15 +41,6 @@ class Message(TypedDict):
     message: str
     timestamp: float
 
-class Problem(TypedDict):
-    id: int
-    title: str
-    difficulty: str
-    description: str
-    examples: list
-    constraints: list
-    topics: list
-    code: str
 
 class Commit(TypedDict):
     player_id: str
@@ -62,9 +62,18 @@ class Game:
         self.chat = []
         self.init_chat()
         self.commits = []
+        self.voters = set()
+        self.tests_running = False
 
-        self.problem, self.tests = self.init_random_problem_and_tests(difficulty)
-        self.test_runner = TestRunner(self.tests)
+        self.problem, self.test_cases, self.constraints = self.load_random_problem_and_test_cycle()
+        self.test_runner = TestRunner(self.test_cases, self.constraints)
+
+    def start_timer(self):
+        self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
+    
+    def init_players(self):
+        random.shuffle(self.players)
+
 
     def start_timer(self):
         self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
@@ -82,12 +91,31 @@ class Game:
         }
         self.chat.append(msg)
     
-    def init_random_problem_and_tests(self, difficulty):
+    def load_random_problem_and_test_cycle(self, difficulty):
+
         file_path = 'backend/data/problems.json'
 
         with open(file_path) as f:
             data = json.load(f)
 
+        problem_id = random.randrange(0, len(data["problems"]))
+        problem_data = data["problems"][problem_id]
+        
+        constraints = problem_data.get("constraint_list", [])
+
+        problem = {
+            "title": problem_data["title"],
+            "difficulty": problem_data["difficulty"],
+            "description": problem_data["description"],
+            "examples": problem_data["examples"],
+            "constraints": problem_data["constraints"],
+            "topics": problem_data["topics"],
+            "code": problem_data["code"],
+            "test_cases": problem_data["test_cases"],
+            "constraint_list": constraints
+        }
+
+        # you pick from the pool of problems that match the difficulty range, if none match you pick from the whole pool
         problem_pool = [
             problem for problem in data["problems"]
             if problem["difficulty"] == difficulty
@@ -104,9 +132,11 @@ class Game:
             "topics": problem["topics"],
             "code": problem["code"]
         }
-        tests_obj = problem["tests"]
+        
+        test_cases_obj: TestCases = problem["test_cases"]
         self.add_commit("System", problem["code"])
-        return problem_obj, tests_obj
+
+        return problem_obj, test_cases_obj, constraints
 
     def add_commit(self, player_id, code):
         commit: Commit = {
@@ -136,8 +166,8 @@ class Game:
 
     def parse_results(self, result):
         try:
-            outputs = [r.get("output") for r in result.tests.get('results')]
-            passed = [r.get("passed") for r in result.tests.get('results')]
+            outputs = [r.get("output") for r in result["tests"].get("results", [])]
+            passed = [r.get("passed") for r in result["tests"].get("results", [])]
             all_passed = all(passed)
             return outputs, passed, all_passed
         except json.JSONDecodeError:
@@ -148,7 +178,10 @@ class Game:
         for player in self.players:
             if player.id == voted_id:
                 player.add_vote()
+                self.voters.add(voter_id)
                 break
+
+        return True
 
     def set_ready(self, player_id):
         for player in self.players:
@@ -174,7 +207,8 @@ class Game:
             response = {
                 "type": "coding-over",
                 "commits": self.get_commits(),
-                "votes": self.get_votes()
+                "votes": self.get_votes(),
+                # "chat": self.get_chat()
             }
 
             await self.room.broadcast(response)
@@ -240,6 +274,10 @@ class Game:
         disconnected_index = next((i for i, player in enumerate(self.players) if player.id == player_id), -1)
         if disconnected_index == -1:
             return
+        if self.state == GameState.RESULTS:
+            self.players.pop(disconnected_index)
+            return
+        
         if self.state == GameState.RESULTS:
             self.players.pop(disconnected_index)
             return

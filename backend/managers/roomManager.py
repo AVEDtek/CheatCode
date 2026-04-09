@@ -1,6 +1,5 @@
 import string
-import random
-import asyncio
+import secrets
 from backend.models.room import Room
 
 class RoomManager:
@@ -11,7 +10,7 @@ class RoomManager:
         characters = string.ascii_uppercase + string.digits
 
         while True:
-            room_id = ''.join(random.choice(characters) for _ in range(length))
+            room_id = ''.join(secrets.choice(characters) for _ in range(length))
             if room_id not in self.rooms:
                 return room_id
 

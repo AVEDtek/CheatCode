@@ -1,3 +1,4 @@
 websockets
 better_profanity
 requests
+python-dotenv
