@@ -65,7 +65,7 @@ class Game:
         self.voters = set()
         self.tests_running = False
 
-        self.problem, self.test_cases, self.constraints = self.load_random_problem_and_test_cycle()
+        self.problem, self.test_cases, self.constraints = self.load_random_problem_and_test_cycle(difficulty)
         self.test_runner = TestRunner(self.test_cases, self.constraints)
 
     def start_timer(self):
@@ -171,7 +171,7 @@ class Game:
             all_passed = all(passed)
             return outputs, passed, all_passed
         except json.JSONDecodeError:
-            return [None] * len(self.tests), [False] * len(self.tests), False
+            return [None] * len(self.test_cases), [False] * len(self.test_cases), False
 
     async def cast_vote(self, voter_id, voted_id):
         await self.add_message("System", f"{voter_id} has cast their vote.", time.time())
@@ -256,7 +256,7 @@ class Game:
         return self.problem
 
     def get_tests(self):
-        return self.tests
+        return self.test_cases
 
     def get_commits(self):
         return self.commits
