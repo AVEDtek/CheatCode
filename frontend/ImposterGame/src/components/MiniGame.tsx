@@ -154,8 +154,14 @@ export default function LobbyMiniGame({
         Lobby Mini Game
       </p>
       <div
-        className="relative rounded-xl border border-gray-700 bg-brand-gray-light/50 overflow-hidden"
-        style={{ width: "100%", aspectRatio: "16 / 10" }}
+        className="relative rounded-xl border border-gray-700 overflow-hidden bg-red-500"
+        style={{ 
+          width: "100%", 
+          aspectRatio: "16 / 10",
+          backgroundImage: "url('/finalspaceship.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center" 
+        }}
       >
         {playerList.map((p) => {
           const isMe = p.playerId === playerId;
