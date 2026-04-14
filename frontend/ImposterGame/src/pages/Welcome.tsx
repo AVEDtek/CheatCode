@@ -35,7 +35,7 @@ export default function Welcome() {
                 <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
                     <div className="flex flex-col items-center gap-3">
                         <h1 className="text-5xl font-extrabold tracking-tight">
-                            <span className="text-purple-500">Cheet</span><span className="text-white">Code</span>
+                            <span className="text-purple-500">Cheat</span><span className="text-white">Code</span>
                         </h1>
                         <p className="text-gray-500 text-sm text-center max-w-xs leading-relaxed">
                             A social deduction game for coders. One imposter. One problem. Can you blend in?

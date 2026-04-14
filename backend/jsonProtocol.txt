@@ -6,9 +6,17 @@ For example, a request to create a room would have 'type' : 'create-room'
 Frontend -> Backend:
     Request: create-room
         playerId
+        difficulty
+        capacity
+        codingTime
+        votingTime
     Response: room-created
         roomId
         playerId
+        difficulty
+        capacity
+        codingTime
+        votingTime
 
     Request: join-room
         roomId
@@ -16,11 +24,15 @@ Frontend -> Backend:
     Response: room-joined
         roomId
         playerId
+        difficulty
+        capacity
+        codingTime
+        votingTime
         playerList
     Response: unable-to-join
         errorMessage
 
-    Message: leave-room
+    Message: leave
         roomId
         playerId
 
@@ -31,44 +43,49 @@ Frontend -> Backend:
         imposterId
         chat
         problem
-        testCycle
+        tests
+
+    Request: set-ready
+        roomId
+        playerId
+    Response: player-ready
+        readyCount
 
     Request: send-message:
         roomId
         playerId
         message
         timestamp
-    Response: chat-update
-        chat
 
-    Request: run-test-cycle
+    Request: new-code
+        roomId
+        code
+    Response: new-code
+        code
+
+    Request: run-tests
         roomId
         playerId
         code 
-    Response: test-results # if not all tests passed
+    Response: test-results
         error
         outputList
         passedList
-    Response: start-vote # if all tests passed
-        commits
-        votes
-        chat
 
     Request: next-turn
         roomId
         playerId
         code
     Response: next-turn
-        currentPlayer
+        playerId
         code
-        chat
 
     Request: cast-vote
         roomId
-        playerId
+        voterId
+        votedId
     Response: vote-casted
         votes
-        chat
 
 Backend -> Frontend
     Message: room-players-update
@@ -76,14 +93,38 @@ Backend -> Frontend
 
     Message: game-players-update
         playerList
-        currentPlayer
+        playerId
+
+    Message: chat-update
         chat
 
-    Message: time-left
-        timeLeft
+    Message: briefing-time-left
+        briefingTimeLeft
+
+    Message briefing-over
+
+    Message: coding-time-left
+        codingTimeLeft
+        turnTimeLeft
 
     Message: turn-over
 
-    Message: vote-over
+    Message: coding-over
+        commits
+        votes
+
+    Message: voting-time-left
+        votingTimeLeft
+
+    Message: voting-over
         votedList
         votedCorrectly
+
+    Message: imposter-disconnected
+
+    Message: not-enough-players
+
+Other:
+    Request: get-health
+    Response:
+        roomList

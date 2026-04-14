@@ -2,23 +2,78 @@
 
 # CheetCode
 
-## How to Start
+## Quick Start
+
+### 1. Backend setup
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
-# Run server
-cd ImposterGame
+
+Create a backend env file at the project root as `.env`:
+
+```env
+# Required if you use remote code execution service
+CHEATCODE_ENGINE_API_KEY=your_api_key_here
+
+# Game settings
+MIN_PLAYERS_TO_START=3
+MIN_PLAYERS_TO_CONTINUE=3
+
+# Backend server
+HOST=0.0.0.0
+PORT=8765
+
+# Security / limits
+ALLOW_LOCAL_TEST_EXECUTION=true
+MAX_WS_MESSAGE_BYTES=65536
+MAX_PLAYER_ID_LENGTH=24
+MAX_CHAT_MESSAGE_LENGTH=600
+MAX_CODE_LENGTH=30000
+HEALTH_ENDPOINT_ENABLED=false
+```
+
+Run backend from the repo root:
+
+```bash
+source backend/.venv/bin/activate
 python3 -m backend.server
 ```
+
+### 2. Frontend setup
+
+In a second terminal:
+
+```bash
+cd frontend/ImposterGame
+npm install
 ```
-# In a separate terminal, run proxy
-cd ImposterGame
-ngrok http 8765
+
+Create `frontend/ImposterGame/.env`:
+
+```env
+VITE_BACKEND_URL=ws://localhost:8765
+VITE_MIN_PLAYERS_TO_START=3
 ```
+
+Run frontend:
+
+```bash
+npm run dev
 ```
-# In a separate terminal, run frontend
-cd ImposterGame
-cd frontend
-cd ImposterGame
-run npm dev
+
+Open the URL shown by Vite (usually `http://localhost:5173`).
+
+### 3. Local testing with fewer players
+
+For quick local testing, you can set both minimums to `1`:
+
+```env
+MIN_PLAYERS_TO_START=1
+MIN_PLAYERS_TO_CONTINUE=1
 ```
 
 ## Inspiration

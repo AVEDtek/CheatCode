@@ -6,9 +6,13 @@ from backend.models.player import Player
 from backend.models.game import Game
 
 class Room:
-    def __init__(self, id):
+    def __init__(self, id, difficulty, capacity, coding_time, voting_time):
         self.id = id
         self.players = [] 
+        self.difficulty = difficulty
+        self.capacity = capacity
+        self.coding_time = coding_time
+        self.voting_time = voting_time
         self.game = None
 
         # Lobby mini-game state:
@@ -30,7 +34,7 @@ class Room:
         self.remove_lobby_player(player_id) 
 
     def create_game(self):
-        self.game = Game(self.players, self)
+        self.game = Game(self, self.players, self.difficulty, self.coding_time, self.voting_time)
         return self.game
 
     def get_players_ids(self):

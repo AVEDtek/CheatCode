@@ -1,5 +1,5 @@
 import string
-import random
+import secrets
 from backend.models.room import Room
 
 class RoomManager:
@@ -10,18 +10,19 @@ class RoomManager:
         characters = string.ascii_uppercase + string.digits
 
         while True:
-            room_id = ''.join(random.choice(characters) for _ in range(length))
+            room_id = ''.join(secrets.choice(characters) for _ in range(length))
             if room_id not in self.rooms:
                 return room_id
 
-    def create_room(self):
+    def create_room(self, difficulty, capacity, coding_time, voting_time):
         room_id = self.generate_random_id()
-        self.rooms[room_id] = Room(room_id)
+        self.rooms[room_id] = Room(room_id, difficulty, capacity, coding_time, voting_time)
         return room_id
 
     def start_game_in_room(self, room_id):
         room = self.get_room(room_id)
         self.rooms[room_id] = room.create_game()
+        asyncio.create_task(room.start_game()) 
 
     def get_room(self, room_id):
         return self.rooms[room_id]
@@ -32,3 +33,6 @@ class RoomManager:
     def remove_room(self, room_id):
         if self.room_exists(room_id):
             del self.rooms[room_id]
+
+    def get_rooms(self):
+        return list(self.rooms.keys())

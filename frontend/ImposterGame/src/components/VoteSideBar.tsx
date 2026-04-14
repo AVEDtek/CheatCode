@@ -2,7 +2,7 @@ import { useSocket } from "../contexts/SocketContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
 import { useRoom } from "../contexts/RoomContext.tsx";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import VoteUserCard from "./VoteUserCard.tsx";
 
@@ -14,13 +14,20 @@ export default function VoteBar({ voting }: VoteBarProps) {
     const { send, isConnected } = useSocket();
     const { roomId, username } = useRoom();
     const {
-        time,
+        votingTime,
         players,
         votes
     } = useGame();
 
     const [voted, setVoted] = useState<boolean>(false);
     const [selectedUser, setSelectedUser] = useState<string>("");
+
+    useEffect(() => {
+        if (!players.includes(selectedUser)) {
+            setSelectedUser("");
+            setVoted(false);
+        }
+    }, [players]);
 
     const handleCardClick = (username: string) => {
         setSelectedUser(username)
@@ -34,7 +41,8 @@ export default function VoteBar({ voting }: VoteBarProps) {
         const request = {
             type: "cast-vote",
             roomId: roomId,
-            playerId: selectedUser
+            voterId: username,
+            votedId: selectedUser
         };
         send(request);
         setVoted(true);
@@ -60,12 +68,12 @@ export default function VoteBar({ voting }: VoteBarProps) {
                     {voting ? (
                         <>
                             <strong className="font-bold text-3xl text-white leading-tight tabular-nums">
-                                {Math.floor(time / 60)}:{String(time % 60).padStart(2, "0")}
+                                {Math.floor(votingTime / 60)}:{String(votingTime % 60).padStart(2, "0")}
                             </strong>
                             <div className="mt-3 h-1.5 w-full rounded-full bg-gray-700 overflow-hidden">
                                 <div
                                     className="h-full bg-purple-600 transition-all duration-1000"
-                                    style={{ width: `${(time / 120) * 100}%` }}
+                                    style={{ width: `${(votingTime / 120) * 100}%` }}
                                 />
                             </div>
                         </>

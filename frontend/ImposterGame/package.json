@@ -12,12 +12,16 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.2.0",
+    "@vercel/analytics": "^2.0.1",
     "lucide-react": "^0.575.0",
     "monaco-editor": "^0.55.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",
     "tailwindcss": "^4.2.0"
+  },
+  "overrides": {
+    "dompurify": "^3.3.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

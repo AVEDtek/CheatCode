@@ -21,7 +21,7 @@ export default function ResultsPanel() {
             return;
         }
         const request = {
-            type: "leave-room",
+            type: "leave",
             roomId: roomId,
             playerId: username
         };

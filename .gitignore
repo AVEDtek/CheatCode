@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+backend/.venv/
+backend/__pycache__/
+.env
+frontend/ImposterGame/.env

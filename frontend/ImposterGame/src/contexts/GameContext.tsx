@@ -9,6 +9,7 @@ import { useSocket } from "./SocketContext";
 import { useRoom } from "./RoomContext";
 
 export const GameState = {
+    Briefing: "briefing",
     Coding: "coding",
     Voting: "voting",
     Results: "results"
@@ -19,22 +20,34 @@ type GameProviderProps = {
 };
 
 type GameContextValue = {
+    gameError: boolean;
+    setGameError: React.Dispatch<React.SetStateAction<boolean>>;
+    gameErrorMessage: string;
+    setGameErrorMessage: React.Dispatch<React.SetStateAction<string>>;
     gameState: string;
     setGameState: React.Dispatch<React.SetStateAction<string>>;
-    time: number;
-    setTime: React.Dispatch<React.SetStateAction<number>>;
+    briefingTime: number;
+    setBriefingTime: React.Dispatch<React.SetStateAction<number>>;
+    codingTime: number;
+    setCodingTime: React.Dispatch<React.SetStateAction<number>>;
+    turnTime: number;
+    setTurnTime: React.Dispatch<React.SetStateAction<number>>;
+    votingTime: number;
+    setVotingTime: React.Dispatch<React.SetStateAction<number>>;
     players: string[];
     setPlayers: React.Dispatch<React.SetStateAction<string[]>>;
     currentPlayer: string;
     setCurrentPlayer: React.Dispatch<React.SetStateAction<string>>;
     imposter: string;
     setImposter: React.Dispatch<React.SetStateAction<string>>;
+    readyCount: number;
+    setReadyCount: React.Dispatch<React.SetStateAction<number>>;
     chat: any[];
     setChat: React.Dispatch<React.SetStateAction<any[]>>;
     problem: any;
     setProblem: React.Dispatch<React.SetStateAction<any>>;
-    testCycle: any[];
-    setTestCycle: React.Dispatch<React.SetStateAction<any[]>>;
+    tests: any[];
+    setTests: React.Dispatch<React.SetStateAction<any[]>>;
     code: string;
     setCode: React.Dispatch<React.SetStateAction<string>>;
     commits: any[];
@@ -48,22 +61,34 @@ type GameContextValue = {
 };
 
 const GameContext = createContext<GameContextValue>({
-    gameState: GameState.Coding,
+    gameError: false,
+    setGameError: (_gameError: React.SetStateAction<boolean>) => { },
+    gameErrorMessage: "",
+    setGameErrorMessage: (_gameErrorMessage: React.SetStateAction<string>) => { },
+    gameState: GameState.Briefing,
     setGameState: (_gameState: React.SetStateAction<string>) => { },
-    time: 0,
-    setTime: (_time: React.SetStateAction<number>) => { },
+    briefingTime: 0,
+    setBriefingTime: (_briefingTime: React.SetStateAction<number>) => { },
+    codingTime: 0,
+    setCodingTime: (_codingTime: React.SetStateAction<number>) => { },
+    turnTime: 0,
+    setTurnTime: (_turnTime: React.SetStateAction<number>) => { },
+    votingTime: 0,
+    setVotingTime: (_votingTime: React.SetStateAction<number>) => { },
     players: [],
     setPlayers: (_players: React.SetStateAction<string[]>) => { },
     currentPlayer: "",
     setCurrentPlayer: (_currentPlayer: React.SetStateAction<string>) => { },
     imposter: "",
     setImposter: (_imposter: React.SetStateAction<string>) => { },
+    readyCount: 0,
+    setReadyCount: (_skips: React.SetStateAction<number>) => { },
     chat: [],
     setChat: (_chat: React.SetStateAction<any[]>) => { },
     problem: null,
     setProblem: (_problem: React.SetStateAction<any>) => { },
-    testCycle: [],
-    setTestCycle: (_testCycle: React.SetStateAction<any[]>) => { },
+    tests: [],
+    setTests: (_tests: React.SetStateAction<any[]>) => { },
     code: "",
     setCode: (_code: React.SetStateAction<string>) => { },
     commits: [],
@@ -80,17 +105,25 @@ export default function GameProvider({ children }: GameProviderProps) {
     const { onMessage, send } = useSocket();
     const { roomId, username } = useRoom();
 
-    const [gameState, setGameState] = useState<string>(GameState.Coding);
-    const [time, setTime] = useState<number>(0);
+    const [gameError, setGameError] = useState<boolean>(false);
+    const [gameErrorMessage, setGameErrorMessage] = useState<string>("");
+
+    const [gameState, setGameState] = useState<string>(GameState.Briefing);
+    const [briefingTime, setBriefingTime] = useState<number>(0);
+    const [codingTime, setCodingTime] = useState<number>(0);
+    const [turnTime, setTurnTime] = useState<number>(0);
+    const [votingTime, setVotingTime] = useState<number>(0);
 
     const [players, setPlayers] = useState<string[]>([]);
     const [currentPlayer, setCurrentPlayer] = useState<string>("");
     const [imposter, setImposter] = useState<string>("");
 
+    const [readyCount, setReadyCount] = useState<number>(0);
+
     const [chat, setChat] = useState<any[]>([]);
 
     const [problem, setProblem] = useState<any>(null);
-    const [testCycle, setTestCycle] = useState<any[]>([]);
+    const [tests, setTests] = useState<any[]>([]);
     const [code, setCode] = useState<string>("");
 
     const [commits, setCommits] = useState<any[]>([]);
@@ -99,8 +132,32 @@ export default function GameProvider({ children }: GameProviderProps) {
     const [votedCorrectly, setVotedCorrectly] = useState<boolean>(false);
 
     useEffect(() => {
-        const unsubTimeLeft = onMessage("time-left", (data) => {
-            setTime(data.timeLeft);
+        const unsubImposterDisconnected = onMessage("imposter-disconnected", () => {
+            setGameError(true);
+            setGameErrorMessage("The imposter has disconnected. The game cannot continue.");
+        });
+        const unsubNotEnoughPlayers = onMessage("not-enough-players", () => {
+            setGameError(true);
+            setGameErrorMessage("Not enough players. The game cannot continue.");
+        });
+        const unsubBriefingTimeLeft = onMessage("briefing-time-left", (data) => {
+            setBriefingTime(data.briefingTimeLeft);
+        });
+        const unsubCodingTimeLeft = onMessage("coding-time-left", (data) => {
+            setCodingTime(data.codingTimeLeft);
+            setTurnTime(data.turnTimeLeft);
+        });
+        const unsubVotingTimeLeft = onMessage("voting-time-left", (data) => {
+            setVotingTime(data.votingTimeLeft);
+        });
+        const unsubPlayerReady = onMessage("player-ready", (data) => {
+            setReadyCount(data.readyCount);
+        });
+        const unsubBriefingOver = onMessage("briefing-over", () => {
+            setGameState(GameState.Coding);
+        });
+        const unsubNewCode = onMessage("new-code", (data) => {
+            setCode(data.code);
         });
         const unsubTurnOver = onMessage("turn-over", () => {
             const response = {
@@ -112,61 +169,76 @@ export default function GameProvider({ children }: GameProviderProps) {
             send(response);
         });
         const unsubNextTurn = onMessage("next-turn", (data) => {
-            setCurrentPlayer(data.currentPlayer);
+            setCurrentPlayer(data.playerId);
             setCode(data.code);
-            setChat(data.chat);
         });
         const unsubChatUpdate = onMessage("chat-update", (data) => {
             setChat(data.chat);
         });
-        const unsubStartVote = onMessage("start-vote", (data) => {
+        const unsubCodingOver = onMessage("coding-over", (data) => {
             setGameState(GameState.Voting);
             setCommits(data.commits);
-            setChat(data.chat);
         });
         const unsubVoteCasted = onMessage("vote-casted", (data) => {
             setVotes(data.voteList);
-            setChat(data.chat);
         });
-        const unsubVoteOver = onMessage("vote-over", (data) => {
+        const unsubVotingOver = onMessage("voting-over", (data) => {
             setGameState(GameState.Results);
             setVoted(data.voted);
             setVotedCorrectly(data.votedCorrectly);
         });
         const unsubPlayersUpdate = onMessage("game-players-update", (data) => {
             setPlayers(data.playerList);
-            setCurrentPlayer(data.currentPlayer);
-            setChat(data.chat);
+            setCurrentPlayer(data.playerId);
         });
         return () => {
-            unsubTimeLeft();
+            unsubImposterDisconnected();
+            unsubNotEnoughPlayers();
+            unsubBriefingTimeLeft();
+            unsubCodingTimeLeft();
+            unsubVotingTimeLeft();
+            unsubPlayerReady();
+            unsubBriefingOver();
+            unsubNewCode();
             unsubTurnOver();
             unsubNextTurn();
             unsubChatUpdate();
-            unsubStartVote();
+            unsubCodingOver();
             unsubVoteCasted();
-            unsubVoteOver();
+            unsubVotingOver();
             unsubPlayersUpdate();
         };
     }, [onMessage, send, roomId, username, code]);
 
     const value = {
+        gameError,
+        setGameError,
+        gameErrorMessage,
+        setGameErrorMessage,
         gameState,
         setGameState,
-        time,
-        setTime,
+        briefingTime,
+        setBriefingTime,
+        codingTime,
+        setCodingTime,
+        turnTime,
+        setTurnTime,
+        votingTime,
+        setVotingTime,
         players,
         setPlayers,
         currentPlayer,
         setCurrentPlayer,
         imposter,
         setImposter,
+        readyCount,
+        setReadyCount,
         chat,
         setChat,
         problem,
         setProblem,
-        testCycle,
-        setTestCycle,
+        tests,
+        setTests,
         code,
         setCode,
         commits,

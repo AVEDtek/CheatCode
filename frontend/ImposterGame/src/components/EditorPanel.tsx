@@ -2,7 +2,7 @@ import { useSocket } from "../contexts/SocketContext.tsx";
 import { useRoom } from "../contexts/RoomContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Editor from "@monaco-editor/react";
 import ConsolePanel from "./ConsolePanel.tsx";
@@ -10,31 +10,49 @@ import ConsolePanel from "./ConsolePanel.tsx";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 export default function EditorPanel() {
-    const { isConnected, send } = useSocket();
+    const { isConnected, send, onMessage } = useSocket();
     const { roomId, username } = useRoom();
     const { currentPlayer, code, setCode } = useGame();
 
     const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
-    const [editorHeight, setEditorHeight] = useState<number>(75);
+    const [editorHeight, setEditorHeight] = useState<number>(100);
     const [consoleHeight, setConsoleHeight] = useState<number>(0);
+    const [isRunning, setIsRunning] = useState<boolean>(false);
+
+    useEffect(() => {
+        const unsub = onMessage("test-results", () => setIsRunning(false));
+        return () => unsub();
+    }, [onMessage]);
 
     const handleEditorChange = (code: string | undefined) => {
         if (code !== undefined) {
             setCode(code);
+
+            if (!isConnected) {
+                console.error("Socket not connected");
+                return;
+            }
+            const request = {
+                type: "new-code",
+                roomId: roomId,
+                code: code
+            };
+            send(request);
         }
     };
 
     const runCode = () => {
-        if (!isConnected) {
-            console.error("Socket not connected");
+        if (!isConnected || isRunning) {
+            console.error("Socket not connected or tests already running");
             return;
         }
         const request = {
-            type: "run-test-cycle",
+            type: "run-tests",
             roomId: roomId,
             playerId: username,
             code: code
         }
+        setIsRunning(true);
         send(request);
         if (!isConsoleOpen) {
             toggleConsole();
@@ -44,18 +62,18 @@ export default function EditorPanel() {
     const toggleConsole = () => {
         if (!isConsoleOpen) {
             setIsConsoleOpen(true);
-            setEditorHeight(50);
-            setConsoleHeight(25);
+            setEditorHeight(65);
+            setConsoleHeight(35);
         } else {
             setIsConsoleOpen(false);
-            setEditorHeight(75);
+            setEditorHeight(100);
             setConsoleHeight(0);
         }
     };
 
     const handleConsoleResize = (newHeight: number) => {
         setConsoleHeight(newHeight);
-        setEditorHeight(75 - newHeight);
+        setEditorHeight(100 - newHeight);
     };
 
     return (
@@ -74,15 +92,17 @@ export default function EditorPanel() {
                 </div>
                 {currentPlayer === username ? (
                     <div className="flex flex-1 flex-col min-h-0">
-                        <Editor
-                            height={`${editorHeight}vh`}
-                            width="100%"
-                            defaultLanguage="python"
-                            defaultValue="// Start coding..."
-                            theme="vs-dark"
-                            value={code}
-                            onChange={handleEditorChange}
-                        />
+                        <div className="min-h-0" style={{ height: `${editorHeight}%` }}>
+                            <Editor
+                                height="100%"
+                                width="100%"
+                                defaultLanguage="python"
+                                defaultValue="// Start coding..."
+                                theme="vs-dark"
+                                value={code}
+                                onChange={handleEditorChange}
+                            />
+                        </div>
                         <ConsolePanel
                             height={consoleHeight}
                             isOpen={isConsoleOpen}
@@ -99,24 +119,37 @@ export default function EditorPanel() {
                             <button
                                 type="button"
                                 onClick={runCode}
-                                className="cursor-pointer px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-purple-700 hover:bg-purple-600 active:scale-95 transition-all duration-200"
+                                disabled={isRunning}
+                                className={`px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all duration-200 ${
+                                    isRunning
+                                        ? "cursor-not-allowed bg-purple-900 opacity-50"
+                                        : "cursor-pointer bg-purple-700 hover:bg-purple-600 active:scale-95"
+                                }`}
                             >
-                                Run
+                                {isRunning ? "Running..." : "Run"}
                             </button>
                         </div>
                     </div>
                 ) : (
                     <div className="flex flex-1 flex-col bg-brand-gray min-h-0">
-                        <div className="flex flex-1 items-center justify-center text-center p-8 bg-brand-gray-light/40">
-                            <div className="max-w-sm rounded-2xl border border-gray-700 bg-brand-gray-light/50 px-6 py-8">
-                                <p className="text-xs uppercase tracking-widest font-semibold text-gray-500 mb-2">Stand By</p>
-                                <p className="text-gray-300 text-lg font-semibold">
-                                    It's {currentPlayer}'s turn
-                                </p>
-                                <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                                    Watch their approach and prepare your next move.
-                                </p>
-                            </div>
+                        <div className="flex items-center justify-between border-b border-gray-700 px-4 py-2 bg-brand-gray-light/30">
+                            <p className="text-xs uppercase tracking-widest font-semibold text-gray-500">Live View</p>
+                            <p className="text-sm font-semibold text-gray-300">
+                                {currentPlayer} is coding
+                            </p>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <Editor
+                                height="100%"
+                                width="100%"
+                                defaultLanguage="python"
+                                theme="vs-dark"
+                                value={code}
+                                options={{
+                                    readOnly: true,
+                                    minimap: { enabled: false }
+                                }}
+                            />
                         </div>
                         <div className="flex h-16 min-h-16 shrink-0 justify-end border-t border-gray-700 bg-brand-gray" />
                     </div>
