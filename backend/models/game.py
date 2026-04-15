@@ -166,12 +166,18 @@ class Game:
 
     def parse_results(self, result):
         try:
-            outputs = [r.get("output") for r in result["tests"].get("results", [])]
-            passed = [r.get("passed") for r in result["tests"].get("results", [])]
+            outputs = []
+            passed = []
+            duration = []
+
+            for r in result["tests"].get("results", []):
+                outputs.append(r.get("output"))
+                passed.append(r.get("passed"))
+                duration.append(r.get("duration_ms"))
             all_passed = all(passed)
-            return outputs, passed, all_passed
+            return outputs, passed, duration, all_passed
         except json.JSONDecodeError:
-            return [None] * len(self.test_cases), [False] * len(self.test_cases), False
+            return [None] * len(self.test_cases), [False] * len(self.test_cases), [0] * len(self.test_cases), False
 
     async def cast_vote(self, voter_id, voted_id):
         await self.add_message("System", f"{voter_id} has cast their vote.", time.time())

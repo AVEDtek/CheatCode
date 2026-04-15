@@ -388,13 +388,14 @@ async def handle_run_tests(websocket, data):
         await websocket.send(json.dumps(response))
         return
 
-    outputs, passed, all_passed = game.parse_results(results)
+    outputs, passed, duration, all_passed = game.parse_results(results)
 
     response = {
         "type": "test-results",
         "error": False,
         "outputList": outputs,
-        "passedList": passed
+        "passedList": passed,
+        "durationList": duration
     }
     await websocket.send(json.dumps(response))
 
