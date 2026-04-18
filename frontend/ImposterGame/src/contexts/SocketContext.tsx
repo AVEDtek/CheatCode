@@ -69,6 +69,7 @@ export default function SocketProvider({ children }: SocketProviderProps) {
           listeners.forEach((listener) => listener(data));
         }
       } catch (e) {
+        console.log("Received non-JSON message:", event.data);
         console.error("Failed to parse message:", e);
       }
     };

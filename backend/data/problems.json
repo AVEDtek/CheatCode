@@ -20,6 +20,7 @@
             "topics": [
                 "Arrays & Hashing"
             ],
+            "timeout_limit_ms": 5,
             "code": "def targetLock(nums, target):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": [[4, 5, 11, 20], 9], "expected": [0, 1], "visible": true },
@@ -53,6 +54,7 @@
             "topics": [
                 "Sliding Window"
             ],
+            "timeout_limit_ms": 1000,
             "code": "def signalRange(s):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": ["abcabcbb"], "expected": 3, "visible": true },
@@ -87,6 +89,7 @@
             "topics": [
                 "Sliding Window"
             ],
+            "timeout_limit_ms": 1000,
             "code": "def minimumSignalWindow(s, t):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": ["ADOBECODEBANC", "ABC"], "expected": "BANC", "visible": true },
@@ -123,6 +126,7 @@
             "topics": [
                 "Array Traversal"
             ],
+             "timeout_limit_ms": 1000,
             "code": "def allButOne(nums):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": [[1, 2, 3, 4]], "expected": [24, 12, 8, 6], "visible": true },
@@ -158,6 +162,7 @@
                 "Prefix Sum",
                 "Hash Map"
             ],
+            "timeout_limit": 1,
             "code": "def burstCounter(nums, target):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": [[1, 1, 1], 2], "expected": 2, "visible": true },
@@ -193,6 +198,8 @@
                 "String",
                 "Counting"
             ],
+            "timeout_limit_ms": 1000,
+
             "code": "def mirrorShift(s, t):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": ["ab", "ba"], "expected": true, "visible": true },
@@ -226,6 +233,7 @@
             "topics": [
                 "Sliding Window"
             ],
+            "timeout_limit_ms": 1000,
             "code": "def streakBreaker(nums):\n    # Write your solution here\n    pass",
             "test_cases": [
                 { "input": [[1, 1, 0, 1]], "expected": 3, "visible": true},

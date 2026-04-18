@@ -65,7 +65,7 @@ class Game:
         self.voters = set()
         self.tests_running = False
 
-        self.problem, self.test_cases, self.constraints = self.load_random_problem_and_test_cycle()
+        self.problem, self.test_cases, self.constraints, self.time_exception = self.load_random_problem_and_test_cycle(difficulty)
         self.test_runner = TestRunner(self.test_cases, self.constraints)
 
     def start_timer(self):
@@ -99,28 +99,20 @@ class Game:
             data = json.load(f)
 
         problem_id = random.randrange(0, len(data["problems"]))
+        
         problem_data = data["problems"][problem_id]
         
         constraints = problem_data.get("constraint_list", [])
-
-        problem = {
-            "title": problem_data["title"],
-            "difficulty": problem_data["difficulty"],
-            "description": problem_data["description"],
-            "examples": problem_data["examples"],
-            "constraints": problem_data["constraints"],
-            "topics": problem_data["topics"],
-            "code": problem_data["code"],
-            "test_cases": problem_data["test_cases"],
-            "constraint_list": constraints
-        }
+        time_exception = problem_data.get("time_exception", None)
 
         # you pick from the pool of problems that match the difficulty range, if none match you pick from the whole pool
         problem_pool = [
             problem for problem in data["problems"]
             if problem["difficulty"] == difficulty
         ]
+
         problem = random.choice(problem_pool)
+        problem = data["problems"][0] #Delete this line to enable random problem selection
 
         problem_obj: Problem = {
             "id": problem["id"],
@@ -130,13 +122,14 @@ class Game:
             "examples": problem["examples"],
             "constraints": problem["constraints"],
             "topics": problem["topics"],
-            "code": problem["code"]
+            "code": problem["code"],
+            "time_exception": problem["timeout_limit_ms"]/1000.0,
         }
         
         test_cases_obj: TestCases = problem["test_cases"]
         self.add_commit("System", problem["code"])
 
-        return problem_obj, test_cases_obj, constraints
+        return problem_obj, test_cases_obj, constraints, time_exception
 
     def add_commit(self, player_id, code):
         commit: Commit = {
@@ -166,12 +159,18 @@ class Game:
 
     def parse_results(self, result):
         try:
-            outputs = [r.get("output") for r in result["tests"].get("results", [])]
-            passed = [r.get("passed") for r in result["tests"].get("results", [])]
+            outputs = []
+            passed = []
+            duration = []
+
+            for r in result["tests"].get("results", []):
+                outputs.append(r.get("output"))
+                passed.append(r.get("passed"))
+                duration.append(r.get("duration_ms"))
             all_passed = all(passed)
-            return outputs, passed, all_passed
+            return outputs, passed, duration, all_passed
         except json.JSONDecodeError:
-            return [None] * len(self.tests), [False] * len(self.tests), False
+            return [None] * len(self.test_cases), [False] * len(self.test_cases), [0] * len(self.test_cases), False
 
     async def cast_vote(self, voter_id, voted_id):
         await self.add_message("System", f"{voter_id} has cast their vote.", time.time())
@@ -256,7 +255,7 @@ class Game:
         return self.problem
 
     def get_tests(self):
-        return self.tests
+        return self.test_cases
 
     def get_commits(self):
         return self.commits
