@@ -451,7 +451,7 @@ async def handler(websocket):
                 finally:
                     game.tests_running = False
                 if results["returncode"] != 0:
-                    outputs, passed = [results["stderr"]] * len(game.get_test_cases()), [False] * len(game.get_test_cases())
+                    outputs, passed = [results["stderr"]] * len(game.get_tests()), [False] * len(game.get_tests())
                     response = {
                         "type": "test-results",
                         "error": True,
