@@ -99,7 +99,6 @@ class Game:
             data = json.load(f)
 
         problem_id = random.randrange(0, len(data["problems"]))
-        
         problem_data = data["problems"][problem_id]
         
         constraints = problem_data.get("constraint_list", [])
@@ -112,7 +111,6 @@ class Game:
         ]
 
         problem = random.choice(problem_pool)
-        problem = data["problems"][0] #Delete this line to enable random problem selection
 
         problem_obj: Problem = {
             "id": problem["id"],
