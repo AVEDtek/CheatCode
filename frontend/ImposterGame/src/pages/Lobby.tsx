@@ -121,9 +121,17 @@ export default function Lobby() {
         <div className="px-5 pt-5 pb-3">
           <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between">
             <Logo />
-            <span className="rounded-full border border-gray-700 bg-brand-gray px-3 py-1 text-xs font-semibold uppercase tracking-widest text-gray-300">
-              Lobby
-            </span>
+
+            <div className="ml-auto flex items-center gap-4">
+              <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors ">
+                Help us improve!
+              </a>
+              <span className="rounded-full border border-gray-700 bg-brand-gray px-3 py-1 text-xs font-semibold uppercase tracking-widest text-gray-300">
+                Lobby
+              </span>
+                    </div>
+                                  
+
           </div>
         </div>
 

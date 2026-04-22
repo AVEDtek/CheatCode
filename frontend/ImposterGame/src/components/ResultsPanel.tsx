@@ -72,8 +72,18 @@ export default function ResultsPanel() {
                         </div>
                     </div>
                 </div>
-
+                <div className="flex justify-center px-6 pb-3">
+                    <button
+                        type="button"
+                        onClick={() => window.open("https://forms.gle/KonNtSsUevfqJ9dD7", "_blank", "noopener,noreferrer")}
+                        className="cursor-pointer rounded-xl border border-green-700/60 bg-green-700/20 px-4 py-2 text-sm font-bold text-green-300 transition-colors duration-200 hover:border-green-500 hover:bg-green-600/20 hover:text-green-200"
+                    >
+                        Help us improve!
+                    </button>
+                </div>
                 <div className="flex justify-center px-6 pb-6">
+
+                    
                     <button
                         type="button"
                         onClick={() => onMainMenuClick()}

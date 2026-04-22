@@ -23,13 +23,20 @@ export default function Welcome() {
                     >
                         <CircleQuestionMark size={22} />
                     </button>
-                    <a
-                        href="https://github.com/AbdouMurad/ImposterGame"
-                        className="p-2 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-all duration-200"
-                        title="View on GitHub"
-                    >
-                        <Github size={22} />
-                    </a>
+
+                    <div className="ml-auto flex items-center gap-4">
+                        <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors ">
+                            Help us improve!
+                        </a>
+                        <a
+                            href="https://github.com/AbdouMurad/ImposterGame"
+                            className="p-2 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-all duration-200"
+                            title="View on GitHub"
+                        >
+                            <Github size={22} />
+                        </a>
+                    </div>
+
                 </div>
 
                 <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
