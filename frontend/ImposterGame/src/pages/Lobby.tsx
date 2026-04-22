@@ -123,7 +123,7 @@ export default function Lobby() {
             <Logo />
 
             <div className="ml-auto flex items-center gap-4">
-              <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors ">
+              <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors " target="_blank" rel="noopener noreferrer">
                 Help us improve!
               </a>
               <span className="rounded-full border border-gray-700 bg-brand-gray px-3 py-1 text-xs font-semibold uppercase tracking-widest text-gray-300">
