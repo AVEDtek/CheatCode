@@ -149,7 +149,7 @@ class TestRunner:
 
     def run_tests(self, code):
         #check if server is running. if not run locally (for dev, in production this should throw a server error that we can catch and display to the user)
-        url = "http://127.0.0.1:8000/status"
+        url = "http://127.0.0.1:8001/status"
         try:
             response = requests.get(url, headers=self.request_headers, timeout=2)
             print("status route:", response.status_code, response.text)
@@ -175,7 +175,7 @@ class TestRunner:
             return self.locally_execute_tests(code)
         
     def execute_tests(self, code):
-        url = "http://127.0.0.1:8000/execute"
+        url = "http://127.0.0.1:8001/execute"
         function_name = get_first_function_name(code)
         if not function_name:
             return {
@@ -214,7 +214,7 @@ class TestRunner:
         # New contract: /execute returns a job id, then /result/{job_id} is polled.
         job_id = self._extract_job_id(response)
         if job_id:
-            poll_url = f"http://127.0.0.1:8000/result/{job_id}"
+            poll_url = f"http://127.0.0.1:8001/result/{job_id}"
             deadline = time.monotonic() + self.execution_poll_timeout_seconds
             while True:
                 if time.monotonic() >= deadline:
