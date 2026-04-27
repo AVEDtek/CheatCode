@@ -15,6 +15,11 @@ class TimeManager:
         self.coding_timer_task = None
         self.voting_timer_task = None
 
+        self.briefing_time_left = self.BRIEFING_DURATION
+        self.coding_time_left = self.CODING_DURATION
+        self.turn_time_left = self.TURN_DURATION
+        self.voting_time_left = self.VOTING_DURATION
+
         self.num_rounds = self.CODING_DURATION // self.TURN_DURATION
 
     async def stop_briefing_timer(self):
@@ -30,12 +35,15 @@ class TimeManager:
         briefing_time_left = self.BRIEFING_DURATION
         try:
             while briefing_time_left > 0:
+                self.briefing_time_left = briefing_time_left
                 await self.room.broadcast({
                     "type": "briefing-time-left",
                     "briefingTimeLeft": briefing_time_left
                 })
                 await asyncio.sleep(1)
                 briefing_time_left -= 1
+
+            self.briefing_time_left = 0
 
             await self.room.broadcast({
                 "type": "briefing-over"
@@ -61,6 +69,8 @@ class TimeManager:
             while coding_time_left > 0:
                 turn_time_left = self.TURN_DURATION
                 while turn_time_left > 0:
+                    self.coding_time_left = coding_time_left
+                    self.turn_time_left = turn_time_left
                     await self.room.broadcast({
                         "type": "coding-time-left",
                         "codingTimeLeft": coding_time_left,
@@ -71,6 +81,9 @@ class TimeManager:
                     turn_time_left -= 1
                 self.num_rounds -= 1
                 await self.game.turn_over()
+
+            self.coding_time_left = 0
+            self.turn_time_left = 0
 
         except asyncio.CancelledError:
             pass
@@ -88,12 +101,15 @@ class TimeManager:
         voting_time_left = self.VOTING_DURATION
         try:
             while voting_time_left > 0:
+                self.voting_time_left = voting_time_left
                 await self.room.broadcast({
                     "type": "voting-time-left",
                     "votingTimeLeft": voting_time_left
                 })
                 await asyncio.sleep(1)
                 voting_time_left -= 1
+
+            self.voting_time_left = 0
 
             response = {
                 "type": "voting-over",

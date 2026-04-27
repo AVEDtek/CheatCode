@@ -12,6 +12,7 @@ class Room:
         self.coding_time = coding_time
         self.voting_time = voting_time
         self.game = None
+        self.game_start_lock = asyncio.Lock()
 
     def add_player(self, player_id, websocket):
         player = Player(player_id, websocket)

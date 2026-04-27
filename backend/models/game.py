@@ -51,6 +51,7 @@ class Game:
         self.room = room
 
         self.state = GameState.BRIEFING
+        self._transition_lock = asyncio.Lock()
 
         self.time_manager = TimeManager(self, room, coding_time, voting_time)
         self.start_timer()
@@ -67,13 +68,6 @@ class Game:
 
         self.problem, self.test_cases, self.constraints, self.time_exception = self.load_random_problem_and_test_cycle(difficulty)
         self.test_runner = TestRunner(self.test_cases, self.constraints)
-
-    def start_timer(self):
-        self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
-    
-    def init_players(self):
-        random.shuffle(self.players)
-
 
     def start_timer(self):
         self.time_manager.briefing_timer_task = asyncio.create_task(self.time_manager.start_briefing_timer())
@@ -187,9 +181,15 @@ class Game:
                 break
 
     async def set_coding(self):
-        await self.time_manager.stop_briefing_timer()
-        self.state = GameState.CODING
-        self.time_manager.coding_timer_task = asyncio.create_task(self.time_manager.start_coding_timer())
+        async with self._transition_lock:
+            if self.state != GameState.BRIEFING:
+                return
+
+            await self.time_manager.stop_briefing_timer()
+            self.state = GameState.CODING
+
+            if self.time_manager.coding_timer_task is None or self.time_manager.coding_timer_task.done():
+                self.time_manager.coding_timer_task = asyncio.create_task(self.time_manager.start_coding_timer())
 
     async def turn_over(self):
         current_player = self.players[self.current_player_idx]
@@ -216,14 +216,24 @@ class Game:
             await self.add_message("System", f"{self.players[self.current_player_idx].id}'s turn to code.", time.time())
 
     async def set_voting(self):
-        await self.time_manager.stop_coding_timer()
-        self.state = GameState.VOTING
-        await self.add_message("System", "Voting has begun. Vote for the imposter!", time.time())
-        self.time_manager.voting_timer_task = asyncio.create_task(self.time_manager.start_voting_timer())
+        async with self._transition_lock:
+            if self.state != GameState.CODING:
+                return
+
+            await self.time_manager.stop_coding_timer()
+            self.state = GameState.VOTING
+            await self.add_message("System", "Voting has begun. Vote for the imposter!", time.time())
+
+            if self.time_manager.voting_timer_task is None or self.time_manager.voting_timer_task.done():
+                self.time_manager.voting_timer_task = asyncio.create_task(self.time_manager.start_voting_timer())
 
     async def set_results(self):
-        await self.time_manager.stop_voting_timer()
-        self.state = GameState.RESULTS
+        async with self._transition_lock:
+            if self.state == GameState.RESULTS:
+                return
+
+            await self.time_manager.stop_voting_timer()
+            self.state = GameState.RESULTS
     
     def get_voted(self):
         if len(self.players) == 0:
@@ -266,6 +276,22 @@ class Game:
 
     def get_time_manager(self):
         return self.time_manager
+
+    def get_sync_payload(self):
+        current_player_id = None
+        if len(self.players) > 0:
+            current_player_id = self.players[self.current_player_idx].id
+
+        return {
+            "type": "game-sync",
+            "gameState": self.state,
+            "briefingTimeLeft": self.time_manager.briefing_time_left,
+            "codingTimeLeft": self.time_manager.coding_time_left,
+            "turnTimeLeft": self.time_manager.turn_time_left,
+            "votingTimeLeft": self.time_manager.voting_time_left,
+            "playerList": self.get_player_ids(),
+            "playerId": current_player_id,
+        }
 
     async def handle_player_disconnect(self, player_id):
         disconnected_index = next((i for i, player in enumerate(self.players) if player.id == player_id), -1)

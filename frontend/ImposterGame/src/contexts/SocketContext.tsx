@@ -66,7 +66,7 @@ export default function SocketProvider({ children }: SocketProviderProps) {
 
         const listeners = listenersRef.current.get(data.type);
         if (listeners) {
-          listeners.forEach((listener) => listener(data));
+          Array.from(listeners).forEach((listener) => listener(data));
         }
       } catch (e) {
         console.log("Received non-JSON message:", event.data);

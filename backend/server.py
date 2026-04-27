@@ -207,11 +207,13 @@ async def handle_start_game(websocket, data):
     
     room = room_manager.get_room(room_id)
 
-    if room.game_started():
-        await websocket.send("Game already started in room: " + room_id)
-        return
-    
-    game = room.create_game()
+    async with room.game_start_lock:
+        if room.game_started():
+            await websocket.send("Game already started in room: " + room_id)
+            return
+
+        game = room.create_game()
+
     problem = game.get_problem()
     test_cases = game.get_tests()
 
@@ -291,6 +293,10 @@ async def handle_next_turn(websocket, data):
 
     if game.state != GameState.CODING:
         await websocket.send("Coding not in progress")
+        return
+
+    if game.players[game.current_player_idx].id != player_id:
+        await websocket.send("Not your turn")
         return
 
     await game.set_next_turn(player_id, code)
@@ -457,6 +463,27 @@ async def handle_get_health(websocket, data):
         "rooms": room_manager.get_rooms()
     }
     await websocket.send(json.dumps(response))
+
+
+@handler("sync-game-state")
+async def handle_sync_game_state(websocket, data):
+    try:
+        room_id = data["roomId"]
+    except KeyError as e:
+        await websocket.send(f"Missing field: {str(e)}")
+        return
+
+    if not room_manager.room_exists(room_id):
+        await websocket.send("No room found: " + room_id)
+        return
+
+    room = room_manager.get_room(room_id)
+    if not room.game_started():
+        await websocket.send("No game running in room")
+        return
+
+    game = room.get_game()
+    await websocket.send(json.dumps(game.get_sync_payload()))
 
 
 async def websocket_handler(websocket):
