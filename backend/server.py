@@ -351,6 +351,47 @@ async def handle_new_code(websocket, data):
     }
     await room.broadcast(response)
 
+
+@handler("cursor-update")
+async def handle_cursor_update(websocket, data):
+    try:
+        room_id = data["roomId"]
+        player_id = data["playerId"]
+        line = int(data["line"])
+        column = int(data["column"])
+    except (KeyError, ValueError, TypeError) as e:
+        await websocket.send(f"Missing or invalid field: {str(e)}")
+        return
+
+    if line < 1 or column < 1:
+        await websocket.send("Invalid cursor position")
+        return
+
+    if not room_manager.room_exists(room_id):
+        await websocket.send("No room found: " + room_id)
+        return
+
+    room = room_manager.get_room(room_id)
+    if not room.game_started():
+        await websocket.send("Game not in progress")
+        return
+
+    game = room.get_game()
+    if game.state != GameState.CODING:
+        return
+
+    if game.players[game.current_player_idx].id != player_id:
+        return
+
+    game.set_cursor_position(player_id, line, column)
+
+    await room.broadcast({
+        "type": "cursor-update",
+        "playerId": player_id,
+        "line": line,
+        "column": column,
+    })
+
 @handler("run-tests")
 async def handle_run_tests(websocket, data):
     try:

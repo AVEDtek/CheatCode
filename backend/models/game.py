@@ -59,6 +59,11 @@ class Game:
         self.players = players
         self.init_players()
         self.current_player_idx = 0
+        self.cursor_position = {
+            "playerId": self.players[self.current_player_idx].id if len(self.players) > 0 else None,
+            "line": 1,
+            "column": 1,
+        }
 
         self.chat = []
         self.init_chat()
@@ -213,7 +218,15 @@ class Game:
             await self.set_voting()
         else:
             self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
+            self.set_cursor_position(self.players[self.current_player_idx].id, 1, 1)
             await self.add_message("System", f"{self.players[self.current_player_idx].id}'s turn to code.", time.time())
+
+    def set_cursor_position(self, player_id, line, column):
+        self.cursor_position = {
+            "playerId": player_id,
+            "line": line,
+            "column": column,
+        }
 
     async def set_voting(self):
         async with self._transition_lock:
@@ -291,6 +304,7 @@ class Game:
             "votingTimeLeft": self.time_manager.voting_time_left,
             "playerList": self.get_player_ids(),
             "playerId": current_player_id,
+            "cursor": self.cursor_position,
         }
 
     async def handle_player_disconnect(self, player_id):
@@ -331,6 +345,7 @@ class Game:
 
         if was_current_player:
             self.current_player_idx = self.current_player_idx % len(self.players)
+            self.set_cursor_position(self.players[self.current_player_idx].id, 1, 1)
 
         if self.state == GameState.BRIEFING and self.get_number_of_ready() >= len(self.players) // 3:
             await self.room.broadcast({
