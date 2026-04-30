@@ -2,6 +2,7 @@ import {
     createContext,
     useContext,
     useEffect,
+    useRef,
     useState,
     type ReactNode
 } from "react";
@@ -130,6 +131,11 @@ export default function GameProvider({ children }: GameProviderProps) {
     const [votes, setVotes] = useState<any>(null);
     const [voted, setVoted] = useState<string[]>([]);
     const [votedCorrectly, setVotedCorrectly] = useState<boolean>(false);
+    const codeRef = useRef<string>(code);
+
+    useEffect(() => {
+        codeRef.current = code;
+    }, [code]);
 
     useEffect(() => {
         const unsubImposterDisconnected = onMessage("imposter-disconnected", () => {
@@ -164,7 +170,7 @@ export default function GameProvider({ children }: GameProviderProps) {
                 type: "next-turn",
                 roomId: roomId,
                 playerId: username,
-                code: code
+                code: codeRef.current
             }
             send(response);
         });
@@ -191,6 +197,19 @@ export default function GameProvider({ children }: GameProviderProps) {
             setPlayers(data.playerList);
             setCurrentPlayer(data.playerId);
         });
+        const unsubGameSync = onMessage("game-sync", (data) => {
+            setGameState(data.gameState);
+            setBriefingTime(data.briefingTimeLeft ?? 0);
+            setCodingTime(data.codingTimeLeft ?? 0);
+            setTurnTime(data.turnTimeLeft ?? 0);
+            setVotingTime(data.votingTimeLeft ?? 0);
+            if (Array.isArray(data.playerList)) {
+                setPlayers(data.playerList);
+            }
+            if (data.playerId) {
+                setCurrentPlayer(data.playerId);
+            }
+        });
         return () => {
             unsubImposterDisconnected();
             unsubNotEnoughPlayers();
@@ -207,8 +226,35 @@ export default function GameProvider({ children }: GameProviderProps) {
             unsubVoteCasted();
             unsubVotingOver();
             unsubPlayersUpdate();
+            unsubGameSync();
         };
-    }, [onMessage, send, roomId, username, code]);
+    }, [onMessage, send, roomId, username]);
+
+    useEffect(() => {
+        if (!roomId) {
+            return;
+        }
+
+        const syncGameState = () => {
+            send({
+                type: "sync-game-state",
+                roomId,
+            });
+        };
+
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                syncGameState();
+            }
+        };
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        syncGameState();
+
+        return () => {
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+        };
+    }, [send, roomId]);
 
     const value = {
         gameError,

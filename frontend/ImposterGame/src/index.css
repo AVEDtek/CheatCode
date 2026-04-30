@@ -33,3 +33,13 @@ body,
 .custom-scrollbar::-webkit-scrollbar-track {
     background-color: #212830;
 }
+
+.remote-cursor-line {
+    background-color: rgba(56, 189, 248, 0.14);
+}
+
+.remote-cursor-caret {
+    border-left: 2px solid #38bdf8;
+    margin-left: -1px;
+    height: 1.2em;
+}

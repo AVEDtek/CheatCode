@@ -2,9 +2,10 @@ import { useSocket } from "../contexts/SocketContext.tsx";
 import { useRoom } from "../contexts/RoomContext.tsx";
 import { useGame } from "../contexts/GameContext.tsx";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import Editor from "@monaco-editor/react";
+import type { editor as MonacoEditor, IDisposable } from "monaco-editor";
 import ConsolePanel from "./ConsolePanel.tsx";
 
 import { ChevronUp, ChevronDown } from "lucide-react";
@@ -18,15 +19,151 @@ export default function EditorPanel() {
     const [editorHeight, setEditorHeight] = useState<number>(100);
     const [consoleHeight, setConsoleHeight] = useState<number>(0);
     const [isRunning, setIsRunning] = useState<boolean>(false);
+    const [remoteCursor, setRemoteCursor] = useState<{ playerId: string; line: number; column: number } | null>(null);
+
+    const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+    const monacoRef = useRef<any>(null);
+    const cursorListenerRef = useRef<IDisposable | null>(null);
+    const decorationIdsRef = useRef<string[]>([]);
+    const lastSentCursorRef = useRef<string>("");
+
+    const clearRemoteCursorDecorations = useCallback(() => {
+        if (!editorRef.current) {
+            decorationIdsRef.current = [];
+            return;
+        }
+        decorationIdsRef.current = editorRef.current.deltaDecorations(decorationIdsRef.current, []);
+    }, []);
+
+    const applyRemoteCursorDecorations = useCallback(() => {
+        const editor = editorRef.current;
+        const monaco = monacoRef.current;
+
+        if (!editor || !monaco || !remoteCursor || currentPlayer === username || remoteCursor.playerId !== currentPlayer) {
+            clearRemoteCursorDecorations();
+            return;
+        }
+
+        const range = new monaco.Range(remoteCursor.line, remoteCursor.column, remoteCursor.line, remoteCursor.column);
+        decorationIdsRef.current = editor.deltaDecorations(decorationIdsRef.current, [
+            {
+                range,
+                options: {
+                    isWholeLine: true,
+                    className: "remote-cursor-line",
+                },
+            },
+            {
+                range,
+                options: {
+                    beforeContentClassName: "remote-cursor-caret",
+                },
+            },
+        ]);
+    }, [clearRemoteCursorDecorations, currentPlayer, remoteCursor, username]);
+
+    const sendCursorUpdate = useCallback((line: number, column: number) => {
+        if (!isConnected || currentPlayer !== username) {
+            return;
+        }
+
+        const cursorKey = `${line}:${column}`;
+        if (lastSentCursorRef.current === cursorKey) {
+            return;
+        }
+        lastSentCursorRef.current = cursorKey;
+
+        send({
+            type: "cursor-update",
+            roomId,
+            playerId: username,
+            line,
+            column,
+        });
+    }, [currentPlayer, isConnected, roomId, send, username]);
+
+    const attachCursorListener = useCallback(() => {
+        cursorListenerRef.current?.dispose();
+        cursorListenerRef.current = null;
+
+        const editor = editorRef.current;
+        if (!editor || currentPlayer !== username) {
+            return;
+        }
+
+        const currentPosition = editor.getPosition();
+        if (currentPosition) {
+            sendCursorUpdate(currentPosition.lineNumber, currentPosition.column);
+        }
+
+        cursorListenerRef.current = editor.onDidChangeCursorPosition((event) => {
+            sendCursorUpdate(event.position.lineNumber, event.position.column);
+        });
+    }, [currentPlayer, sendCursorUpdate, username]);
+
+    const handleEditorMount = useCallback((editor: MonacoEditor.IStandaloneCodeEditor, monaco: any) => {
+        editorRef.current = editor;
+        monacoRef.current = monaco;
+        attachCursorListener();
+        applyRemoteCursorDecorations();
+    }, [applyRemoteCursorDecorations, attachCursorListener]);
 
     useEffect(() => {
         const unsubTestResults = onMessage("test-results", () => setIsRunning(false));
         const unsubTestsRunning = onMessage("tests-running", () => setIsRunning(false));
+        const unsubCursorUpdate = onMessage("cursor-update", (data) => {
+            if (typeof data?.line !== "number" || typeof data?.column !== "number" || !data?.playerId) {
+                return;
+            }
+            setRemoteCursor({
+                playerId: data.playerId,
+                line: data.line,
+                column: data.column,
+            });
+        });
+        const unsubGameSync = onMessage("game-sync", (data) => {
+            const cursor = data?.cursor;
+            if (!cursor || typeof cursor?.line !== "number" || typeof cursor?.column !== "number" || !cursor?.playerId) {
+                return;
+            }
+            setRemoteCursor({
+                playerId: cursor.playerId,
+                line: cursor.line,
+                column: cursor.column,
+            });
+        });
         return () => {
             unsubTestResults();
             unsubTestsRunning();
+            unsubCursorUpdate();
+            unsubGameSync();
         };
     }, [onMessage]);
+
+    useEffect(() => {
+        attachCursorListener();
+    }, [attachCursorListener]);
+
+    useEffect(() => {
+        applyRemoteCursorDecorations();
+    }, [applyRemoteCursorDecorations]);
+
+    useEffect(() => {
+        if (currentPlayer === username) {
+            clearRemoteCursorDecorations();
+            setRemoteCursor(null);
+        }
+    }, [clearRemoteCursorDecorations, currentPlayer, username]);
+
+    useEffect(() => {
+        return () => {
+            cursorListenerRef.current?.dispose();
+            cursorListenerRef.current = null;
+            clearRemoteCursorDecorations();
+            editorRef.current = null;
+            monacoRef.current = null;
+        };
+    }, [clearRemoteCursorDecorations]);
 
     const handleEditorChange = (code: string | undefined) => {
         if (code !== undefined) {
@@ -105,6 +242,7 @@ export default function EditorPanel() {
                                 theme="vs-dark"
                                 value={code}
                                 onChange={handleEditorChange}
+                                onMount={handleEditorMount}
                             />
                         </div>
                         <ConsolePanel
@@ -149,6 +287,7 @@ export default function EditorPanel() {
                                 defaultLanguage="python"
                                 theme="vs-dark"
                                 value={code}
+                                onMount={handleEditorMount}
                                 options={{
                                     readOnly: true,
                                     minimap: { enabled: false }

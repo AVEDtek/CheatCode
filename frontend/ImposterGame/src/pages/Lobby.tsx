@@ -84,8 +84,40 @@ export default function Lobby() {
 
   }, [navState]);
 
+  function fallbackCopyText(text: string) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return copied;
+  }
+
   async function copyCode() {
-    await navigator.clipboard.writeText(roomId);
+    if (!roomId) {
+      return;
+    }
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(roomId);
+        return;
+      }
+
+      const copied = fallbackCopyText(roomId);
+      if (!copied) {
+        console.error("Failed to copy room code");
+      }
+    } catch (error) {
+      const copied = fallbackCopyText(roomId);
+      if (!copied) {
+        console.error("Failed to copy room code", error);
+      }
+    }
   }
 
   async function onStartGameClick() {
