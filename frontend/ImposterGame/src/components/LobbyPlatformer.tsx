@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+// type that defines a particular platform, contains xy position along with width and height
 type Platform = {
     x: number;
     y: number;
@@ -16,11 +17,17 @@ type PlayerState = {
     won: boolean;
 };
 
+type GoalState = {
+    x: number;
+    y: number;
+};
+
 const WORLD_WIDTH = 320;
 const WORLD_HEIGHT = 180;
 const PLAYER_SIZE = 12;
 const GOAL_SIZE = 10;
 
+// platform map
 const PLATFORMS: Platform[] = [
     { x: 0, y: 164, w: 320, h: 16 },
     { x: 36, y: 136, w: 74, h: 10 },
@@ -37,16 +44,19 @@ const INITIAL_PLAYER: PlayerState = {
     won: false,
 };
 
-const GOAL = {
+const INITIAL_GOAL: GoalState = {
     x: 288,
     y: 70,
 };
 
 export default function LobbyPlatformer() {
+    const [playerScore, setPlayerScore] = useState(0);
+
     const [player, setPlayer] = useState<PlayerState>(INITIAL_PLAYER);
-    const [status, setStatus] = useState<string>("Reach the dot on the top-right.");
+    const [goal, setGoal] = useState<GoalState>(INITIAL_GOAL);
 
     const stateRef = useRef<PlayerState>(INITIAL_PLAYER);
+    const goalRef = useRef<GoalState>(INITIAL_GOAL);
     const keysRef = useRef({
         left: false,
         right: false,
@@ -60,13 +70,26 @@ export default function LobbyPlatformer() {
         setPlayer(nextState);
     };
 
+    const randomGoal = (): GoalState => ({
+        x: Math.floor(Math.random() * (WORLD_WIDTH - GOAL_SIZE)),
+        y: Math.floor(Math.random() * (WORLD_HEIGHT - GOAL_SIZE)),
+    });
+
+    const moveGoal = () => {
+        const nextGoal = randomGoal();
+        goalRef.current = nextGoal;
+        setGoal(nextGoal);
+        setPlayerScore((score) => score + 1);
+    };
+
     const resetGame = () => {
         const resetState = { ...INITIAL_PLAYER };
         stateRef.current = resetState;
+        goalRef.current = INITIAL_GOAL;
         keysRef.current.jump = false;
         lastTimeRef.current = null;
-        setStatus("Reach the dot on the top-right.");
         setPlayer(resetState);
+        setGoal(INITIAL_GOAL);
     };
 
     useEffect(() => {
@@ -108,11 +131,6 @@ export default function LobbyPlatformer() {
         };
 
         const step = (time: number) => {
-            if (stateRef.current.won) {
-                frameRef.current = requestAnimationFrame(step);
-                return;
-            }
-
             if (lastTimeRef.current === null) {
                 lastTimeRef.current = time;
             }
@@ -131,20 +149,17 @@ export default function LobbyPlatformer() {
             const moveRight = keysRef.current.right;
             const jumpPressed = keysRef.current.jump;
 
-            const acceleration = 760;
             const gravity = 1800;
             const jumpVelocity = 560;
             const maxSpeed = 180;
 
             if (moveLeft && !moveRight) {
-                nextVx -= acceleration * dt;
+                nextVx = -maxSpeed;
             } else if (moveRight && !moveLeft) {
-                nextVx += acceleration * dt;
+                nextVx = maxSpeed;
             } else {
-                nextVx *= Math.pow(0.001, dt);
+                nextVx = 0;
             }
-
-            nextVx = Math.max(-maxSpeed, Math.min(maxSpeed, nextVx));
 
             if (jumpPressed && grounded) {
                 nextVy = -jumpVelocity;
@@ -212,24 +227,24 @@ export default function LobbyPlatformer() {
 
             const playerCenterX = nextX + PLAYER_SIZE / 2;
             const playerCenterY = nextY + PLAYER_SIZE / 2;
-            const goalCenterX = GOAL.x + GOAL_SIZE / 2;
-            const goalCenterY = GOAL.y + GOAL_SIZE / 2;
-            const reachedGoal = Math.hypot(playerCenterX - goalCenterX, playerCenterY - goalCenterY) < 16;
+            const currentGoal = goalRef.current;
+            const goalCenterX = currentGoal.x + GOAL_SIZE / 2;
+            const goalCenterY = currentGoal.y + GOAL_SIZE / 2;
+            const reachedGoal = Math.hypot(playerCenterX - goalCenterX, playerCenterY - goalCenterY) < 10;
 
-            const nextState = {
+            if (reachedGoal) {
+                moveGoal();
+            }
+
+            syncState({
                 x: nextX,
                 y: nextY,
                 vx: nextVx,
                 vy: nextVy,
                 grounded,
                 won: reachedGoal,
-            };
+            });
 
-            if (reachedGoal && !current.won) {
-                setStatus("You reached the goal. Press R to play again.");
-            }
-
-            syncState(nextState);
             frameRef.current = requestAnimationFrame(step);
         };
 
@@ -252,15 +267,9 @@ export default function LobbyPlatformer() {
             <div className="mb-2 flex items-center justify-between gap-3">
                 <div>
                     <p className="text-xs uppercase tracking-widest font-semibold text-gray-500">Mini Platformer</p>
-                    <p className="text-[11px] text-gray-400">Move with A/D or arrows. Jump with Space. Reset with R.</p>
+                    <p className="text-[11px] text-gray-400">Move with WASD or arrows. Jump with Space.</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={resetGame}
-                    className="cursor-pointer rounded-lg border border-gray-700 bg-brand-gray px-2.5 py-1 text-[11px] font-bold text-gray-200 transition-colors duration-200 hover:border-purple-500 hover:text-purple-300"
-                >
-                    Reset
-                </button>
+                <p className="text-[12px] text-gray-400">Score: {playerScore}</p>
             </div>
 
             <div
@@ -283,8 +292,8 @@ export default function LobbyPlatformer() {
                 <div
                     className="absolute rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.7)]"
                     style={{
-                        left: `${(GOAL.x / WORLD_WIDTH) * 100}%`,
-                        top: `${(GOAL.y / WORLD_HEIGHT) * 100}%`,
+                        left: `${(goal.x / WORLD_WIDTH) * 100}%`,
+                        top: `${(goal.y / WORLD_HEIGHT) * 100}%`,
                         width: `${(GOAL_SIZE / WORLD_WIDTH) * 100}%`,
                         height: `${(GOAL_SIZE / WORLD_HEIGHT) * 100}%`,
                     }}
@@ -301,11 +310,6 @@ export default function LobbyPlatformer() {
                     }}
                     aria-hidden="true"
                 />
-
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-3 pb-2 text-[10px] uppercase tracking-[0.2em] text-gray-500">
-                    <span>{status}</span>
-                    <span>{player.won ? "Goal" : player.grounded ? "Grounded" : "Airborne"}</span>
-                </div>
             </div>
         </div>
     );
