@@ -7,6 +7,7 @@ import { Copy } from "lucide-react";
 
 import Logo from "../components/Logo.tsx";
 import LobbyUserCard from "../components/LobbyUserCard.tsx";
+import LobbyPlatformer from "../components/LobbyPlatformer";
 
 type LobbyLocationState = {
   roomId: string;
@@ -83,40 +84,8 @@ export default function Lobby() {
 
   }, [navState]);
 
-  function fallbackCopyText(text: string) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.setAttribute("readonly", "");
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    document.body.appendChild(textArea);
-    textArea.select();
-    const copied = document.execCommand("copy");
-    document.body.removeChild(textArea);
-    return copied;
-  }
-
   async function copyCode() {
-    if (!roomId) {
-      return;
-    }
-
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(roomId);
-        return;
-      }
-
-      const copied = fallbackCopyText(roomId);
-      if (!copied) {
-        console.error("Failed to copy room code");
-      }
-    } catch (error) {
-      const copied = fallbackCopyText(roomId);
-      if (!copied) {
-        console.error("Failed to copy room code", error);
-      }
-    }
+    await navigator.clipboard.writeText(roomId);
   }
 
   async function onStartGameClick() {
@@ -155,13 +124,13 @@ export default function Lobby() {
             <Logo />
 
             <div className="ml-auto flex items-center gap-4">
-              <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors " target="_blank" rel="noopener noreferrer">
+              <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors ">
                 Help us improve!
               </a>
               <span className="rounded-full border border-gray-700 bg-brand-gray px-3 py-1 text-xs font-semibold uppercase tracking-widest text-gray-300">
                 Lobby
               </span>
-                    </div>
+              </div>
                                   
 
           </div>
@@ -265,6 +234,8 @@ export default function Lobby() {
                       <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedVotingTime}</p>
                     </div>
                   </div>
+
+                  <LobbyPlatformer />
 
                 </div>
 
