@@ -44,8 +44,8 @@ const INITIAL_PLAYER: PlayerState = {
 };
 
 const INITIAL_GOAL: GoalState = {
-    x: 288,
-    y: 70,
+    x: 240,
+    y: 72,
 };
 
 export default function LobbyPlatformer() {
@@ -71,10 +71,19 @@ export default function LobbyPlatformer() {
         setPlayer(nextState);
     };
 
-    const randomGoal = (): GoalState => ({
-        x: Math.floor(Math.random() * (WORLD_WIDTH - GOAL_SIZE)),
-        y: Math.floor(Math.random() * (WORLD_HEIGHT - GOAL_SIZE)),
-    });
+    const randomGoal = (): GoalState => {
+        const surfaces = PLATFORMS.map((p) => ({ x: p.x, y: p.y - GOAL_SIZE, span: p.w - GOAL_SIZE }));
+        const totalSpan = surfaces.reduce((sum, s) => sum + s.span, 0);
+        let pick = Math.random() * totalSpan;
+        for (const surface of surfaces) {
+            if (pick < surface.span) {
+                return { x: Math.floor(surface.x + pick), y: surface.y };
+            }
+            pick -= surface.span;
+        }
+        const last = surfaces[surfaces.length - 1];
+        return { x: Math.floor(last.x + Math.random() * last.span), y: last.y };
+    };
 
     const moveGoal = () => {
         const nextGoal = randomGoal();
