@@ -17,6 +17,7 @@ Frontend -> Backend:
         capacity
         codingTime
         votingTime
+        hostId
 
     Request: join-room
         roomId
@@ -29,6 +30,7 @@ Frontend -> Backend:
         codingTime
         votingTime
         playerList
+        hostId
     Response: unable-to-join
         errorMessage
 
@@ -87,9 +89,15 @@ Frontend -> Backend:
     Response: vote-casted
         votes
 
+    Request: play-again
+        roomId
+        playerId
+        (adds the player to the rematch ready set; valid only during RESULTS)
+
 Backend -> Frontend
     Message: room-players-update
         playerList
+        hostId
 
     Message: game-players-update
         playerList
@@ -119,6 +127,20 @@ Backend -> Frontend
     Message: voting-over
         votedList
         votedCorrectly
+
+    Message: rematch-time-left
+        rematchTimeLeft
+
+    Message: rematch-update
+        playerList
+        readyList
+        hostId
+        (broadcast when a player opts into a rematch or leaves during RESULTS)
+
+    Message: rematch-over
+        playerList
+        hostId
+        (rematch window closed: non-ready players pruned, game reset, host may start)
 
     Message: imposter-disconnected
 

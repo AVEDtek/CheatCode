@@ -10,15 +10,18 @@ class TimeManager:
         self.CODING_DURATION = coding_time
         self.TURN_DURATION = 30
         self.VOTING_DURATION = voting_time
+        self.REMATCH_DURATION = 30
 
         self.briefing_timer_task = None
         self.coding_timer_task = None
         self.voting_timer_task = None
+        self.rematch_timer_task = None
 
         self.briefing_time_left = self.BRIEFING_DURATION
         self.coding_time_left = self.CODING_DURATION
         self.turn_time_left = self.TURN_DURATION
         self.voting_time_left = self.VOTING_DURATION
+        self.rematch_time_left = self.REMATCH_DURATION
 
         self.num_rounds = self.CODING_DURATION // self.TURN_DURATION
 
@@ -123,7 +126,40 @@ class TimeManager:
         except asyncio.CancelledError:
             pass
 
+    async def stop_rematch_timer(self):
+        if self.rematch_timer_task and not self.rematch_timer_task.done():
+            self.rematch_timer_task.cancel()
+            try:
+                await self.rematch_timer_task
+            except asyncio.CancelledError:
+                pass
+        self.rematch_timer_task = None
+
+    async def start_rematch_timer(self):
+        rematch_time_left = self.REMATCH_DURATION
+        try:
+            while rematch_time_left > 0:
+                self.rematch_time_left = rematch_time_left
+                await self.room.broadcast({
+                    "type": "rematch-time-left",
+                    "rematchTimeLeft": rematch_time_left
+                })
+                await asyncio.sleep(1)
+                rematch_time_left -= 1
+
+            self.rematch_time_left = 0
+            await self.room.broadcast({
+                "type": "rematch-time-left",
+                "rematchTimeLeft": 0
+            })
+
+            await self.game.finalize_rematch()
+
+        except asyncio.CancelledError:
+            pass
+
     async def stop_all_timers(self):
         await self.stop_briefing_timer()
         await self.stop_coding_timer()
         await self.stop_voting_timer()
+        await self.stop_rematch_timer()

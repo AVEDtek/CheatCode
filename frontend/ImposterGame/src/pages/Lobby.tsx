@@ -17,6 +17,7 @@ type LobbyLocationState = {
   codingTime: number;
   votingTime: number;
   players: string[];
+  hostId: string;
 };
 
 const MIN_PLAYERS_TO_START = (() => {
@@ -45,12 +46,17 @@ export default function Lobby() {
     votingTime,
     setVotingTime,
     players,
-    setPlayers
+    setPlayers,
+    hostId,
+    setHostId,
+    rematchActive,
+    rematchTimeLeft,
+    readyList
   } = useRoom();
 
   const navigate = useNavigate();
   const location = useLocation();
-  const navState = location.state as LobbyLocationState;
+  const navState = location.state as LobbyLocationState | undefined;
   const formattedCodingTime = `${codingTime / 60} min`;
   const formattedVotingTime = `${votingTime / 60} min`;
 
@@ -73,12 +79,15 @@ export default function Lobby() {
   }, [onMessage]);
 
   useEffect(() => {
+    if (!navState) return;
+
     setRoomId(navState.roomId);
     setUsername(navState.username);
     setDifficulty(navState.difficulty);
     setCapacity(navState.capacity);
     setCodingTime(navState.codingTime);
     setVotingTime(navState.votingTime);
+    setHostId(navState.hostId);
 
     setPlayers(navState.players);
 
@@ -114,7 +123,10 @@ export default function Lobby() {
     navigate("/");
   }
 
-  const canStartGame = players.length >= MIN_PLAYERS_TO_START && players[0] === username;
+  const effectiveHost = hostId || players[0];
+  const isHost = effectiveHost === username;
+  const rematchPending = rematchActive && rematchTimeLeft > 0;
+  const canStartGame = players.length >= MIN_PLAYERS_TO_START && isHost && !rematchPending;
 
   return (
     <>
@@ -154,7 +166,12 @@ export default function Lobby() {
 
                 <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto custom-scrollbar px-4 py-4">
                   {players.map((player, index) => (
-                    <LobbyUserCard key={index} username={player} highlight={player === username} />
+                    <LobbyUserCard
+                      key={index}
+                      username={player}
+                      highlight={player === username}
+                      loading={rematchActive && !readyList.includes(player)}
+                    />
                   ))}
                   {Array.from({ length: Math.max(0, capacity - players.length) }).map((_, i) => (
                     <div
@@ -197,7 +214,7 @@ export default function Lobby() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Host</p>
-                        <p className="mt-1 text-gray-100 font-semibold truncate">{players[0]}</p>
+                        <p className="mt-1 text-gray-100 font-semibold truncate">{effectiveHost}</p>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Capacity</p>
@@ -242,9 +259,11 @@ export default function Lobby() {
                 <div className="flex flex-col gap-2 px-5 pb-5 pt-4">
                   {!canStartGame && (
                     <p className="text-gray-500 text-xs text-center">
-                      {players[0] !== username
-                        ? "Only the host can start"
-                        : `Need at least ${MIN_PLAYERS_TO_START} player${MIN_PLAYERS_TO_START === 1 ? "" : "s"}`}
+                      {rematchPending
+                        ? `Rematch starting in ${rematchTimeLeft}s...`
+                        : !isHost
+                          ? "Only the host can start"
+                          : `Need at least ${MIN_PLAYERS_TO_START} player${MIN_PLAYERS_TO_START === 1 ? "" : "s"}`}
                     </p>
                   )}
                   <button

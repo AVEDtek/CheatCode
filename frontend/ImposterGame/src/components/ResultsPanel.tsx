@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ResultsPanel() {
     const { send, isConnected } = useSocket();
-    const { roomId, username } = useRoom();
+    const { roomId, username, rematchTimeLeft } = useRoom();
     const {
         imposter,
         voted,
@@ -14,6 +14,24 @@ export default function ResultsPanel() {
     } = useGame();
 
     const navigate = useNavigate();
+
+    const canPlayAgain = rematchTimeLeft > 0;
+
+    const onPlayAgainClick = () => {
+        if (!isConnected) {
+            console.error("Socket not connected");
+            return;
+        }
+        if (!canPlayAgain) {
+            return;
+        }
+        send({
+            type: "play-again",
+            roomId: roomId,
+            playerId: username
+        });
+        navigate("/Lobby");
+    }
 
     const onMainMenuClick = () => {
         if (!isConnected) {
@@ -81,13 +99,18 @@ export default function ResultsPanel() {
                         Help us improve!
                     </button>
                 </div>
-                <div className="flex justify-center px-6 pb-6">
-
-                    
+                <div className="flex flex-col gap-2 px-6 pb-6">
+                    <button
+                        type="button"
+                        onClick={() => onPlayAgainClick()}
+                        disabled={!canPlayAgain}
+                        className={`w-full rounded-xl p-3 text-sm font-bold text-white bg-purple-700 transition-all duration-200 ${canPlayAgain ? "cursor-pointer hover:bg-purple-600 active:scale-95" : "cursor-default opacity-40"}`}>
+                        {canPlayAgain ? `Play Again (${rematchTimeLeft})` : "Play Again"}
+                    </button>
                     <button
                         type="button"
                         onClick={() => onMainMenuClick()}
-                        className="cursor-pointer w-full rounded-xl bg-purple-700 p-3 text-sm font-bold text-white transition-all duration-200 hover:bg-purple-600 active:scale-95">
+                        className="cursor-pointer w-full rounded-xl border border-gray-700 p-3 text-sm font-bold text-gray-400 transition-all duration-200 hover:border-gray-500 hover:text-gray-200 active:scale-95">
                         Back to Main Menu
                     </button>
                 </div>

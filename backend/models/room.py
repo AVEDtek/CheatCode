@@ -12,6 +12,7 @@ class Room:
         self.coding_time = coding_time
         self.voting_time = voting_time
         self.game = None
+        self.host_id = None
         self.game_start_lock = asyncio.Lock()
 
     def add_player(self, player_id, websocket):
@@ -20,6 +21,16 @@ class Room:
 
     def remove_player(self, player_id):
         self.players[:] = [player for player in self.players if player.id != player_id]
+        if self.host_id == player_id:
+            self.host_id = self.players[0].id if self.players else None
+
+    def reset_for_rematch(self, ready_ids):
+        self.players[:] = [player for player in self.players if player.id in ready_ids]
+        for player in self.players:
+            player.reset_for_new_game()
+        if self.host_id not in {player.id for player in self.players}:
+            self.host_id = self.players[0].id if self.players else None
+        self.game = None
 
     def create_game(self):
         self.game = Game(self, self.players, self.difficulty, self.coding_time, self.voting_time)

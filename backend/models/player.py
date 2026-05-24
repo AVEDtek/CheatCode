@@ -12,6 +12,11 @@ class Player:
         self.votes = 0
         self.websocket = websocket
 
+    def reset_for_new_game(self):
+        self.role = Role.CREWMATE
+        self.ready = False
+        self.votes = 0
+
     def set_imposter(self):
         self.role = Role.IMPOSTER
 

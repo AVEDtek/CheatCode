@@ -26,6 +26,11 @@ type RoomContextValue = {
     setVotingTime: React.Dispatch<React.SetStateAction<number>>;
     players: string[];
     setPlayers: React.Dispatch<React.SetStateAction<string[]>>;
+    hostId: string;
+    setHostId: React.Dispatch<React.SetStateAction<string>>;
+    rematchActive: boolean;
+    rematchTimeLeft: number;
+    readyList: string[];
 };
 
 const RoomContext = createContext<RoomContextValue>({
@@ -42,7 +47,12 @@ const RoomContext = createContext<RoomContextValue>({
     votingTime: 0,
     setVotingTime: (_votingTime: React.SetStateAction<number>) => { },
     players: [],
-    setPlayers: (_players: React.SetStateAction<string[]>) => { }
+    setPlayers: (_players: React.SetStateAction<string[]>) => { },
+    hostId: "",
+    setHostId: (_hostId: React.SetStateAction<string>) => { },
+    rematchActive: false,
+    rematchTimeLeft: 0,
+    readyList: []
 });
 
 export default function RoomProvider({ children }: RoomProviderProps) {
@@ -55,14 +65,61 @@ export default function RoomProvider({ children }: RoomProviderProps) {
     const [codingTime, setCodingTime] = useState<number>(0);
     const [votingTime, setVotingTime] = useState<number>(0);
     const [players, setPlayers] = useState<string[]>([]);
+    const [hostId, setHostId] = useState<string>("");
+    const [rematchActive, setRematchActive] = useState<boolean>(false);
+    const [rematchTimeLeft, setRematchTimeLeft] = useState<number>(0);
+    const [readyList, setReadyList] = useState<string[]>([]);
 
     useEffect(() => {
-        const unsubRoomJoin = onMessage("room-players-update", (data) => {
+        const unsubRoomPlayers = onMessage("room-players-update", (data) => {
             setPlayers(data.playerList);
+            if (data.hostId) {
+                setHostId(data.hostId);
+            }
+        });
+        const unsubRematchTime = onMessage("rematch-time-left", (data) => {
+            setRematchActive(true);
+            setRematchTimeLeft(data.rematchTimeLeft);
+        });
+        const unsubRematchUpdate = onMessage("rematch-update", (data) => {
+            setRematchActive(true);
+            setPlayers(data.playerList);
+            setReadyList(data.readyList ?? []);
+            if (data.hostId) {
+                setHostId(data.hostId);
+            }
+        });
+        const unsubRematchOver = onMessage("rematch-over", (data) => {
+            setRematchTimeLeft(0);
+            setPlayers(data.playerList);
+            setReadyList(data.playerList);
+            if (data.hostId) {
+                setHostId(data.hostId);
+            }
+        });
+        const unsubGameSync = onMessage("game-sync", (data) => {
+            if (data.hostId) {
+                setHostId(data.hostId);
+            }
+            if (data.gameState === "results") {
+                setRematchActive(true);
+                setRematchTimeLeft(data.rematchTimeLeft ?? 0);
+                setReadyList(data.readyList ?? []);
+            }
+        });
+        const unsubGameStarted = onMessage("game-started", () => {
+            setRematchActive(false);
+            setRematchTimeLeft(0);
+            setReadyList([]);
         });
 
         return () => {
-            unsubRoomJoin();
+            unsubRoomPlayers();
+            unsubRematchTime();
+            unsubRematchUpdate();
+            unsubRematchOver();
+            unsubGameSync();
+            unsubGameStarted();
         };
     }, [onMessage]);
 
@@ -80,7 +137,12 @@ export default function RoomProvider({ children }: RoomProviderProps) {
         votingTime,
         setVotingTime,
         players,
-        setPlayers
+        setPlayers,
+        hostId,
+        setHostId,
+        rematchActive,
+        rematchTimeLeft,
+        readyList
     }
 
     return (

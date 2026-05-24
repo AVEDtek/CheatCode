@@ -70,6 +70,8 @@ class Game:
         self.commits = []
         self.voters = set()
         self.tests_running = False
+        self.rematch_ready = set()
+        self.rematch_finalized = False
 
         self.problem, self.test_cases, self.constraints, self.time_exception = self.load_random_problem_and_test_cycle(difficulty)
         self.test_runner = TestRunner(self.test_cases, self.constraints)
@@ -97,7 +99,8 @@ class Game:
         with open(file_path) as f:
             data = json.load(f)
 
-        problem_id = random.randrange(0, len(data["problems"]))
+        # problem_id = random.randrange(0, len(data["problems"]))
+        problem_id = 0
         problem_data = data["problems"][problem_id]
         
         constraints = problem_data.get("constraint_list", [])
@@ -109,7 +112,8 @@ class Game:
             if problem["difficulty"] == difficulty
         ]
 
-        problem = random.choice(problem_pool)
+        # problem = random.choice(problem_pool)
+        problem = problem_data
 
         problem_obj: Problem = {
             "id": problem["id"],
@@ -247,7 +251,33 @@ class Game:
 
             await self.time_manager.stop_voting_timer()
             self.state = GameState.RESULTS
-    
+
+            if self.time_manager.rematch_timer_task is None or self.time_manager.rematch_timer_task.done():
+                self.time_manager.rematch_timer_task = asyncio.create_task(self.time_manager.start_rematch_timer())
+
+    def add_rematch_ready(self, player_id):
+        if any(player.id == player_id for player in self.players):
+            self.rematch_ready.add(player_id)
+
+    def get_rematch_ready(self):
+        return [player.id for player in self.players if player.id in self.rematch_ready]
+
+    async def finalize_rematch(self):
+        async with self._transition_lock:
+            if self.rematch_finalized:
+                return
+            self.rematch_finalized = True
+
+        await self.time_manager.stop_rematch_timer()
+        ready_ids = {player.id for player in self.players if player.id in self.rematch_ready}
+        self.room.reset_for_rematch(ready_ids)
+
+        await self.room.broadcast({
+            "type": "rematch-over",
+            "playerList": self.room.get_players_ids(),
+            "hostId": self.room.host_id,
+        })
+
     def get_voted(self):
         if len(self.players) == 0:
             return []
@@ -305,6 +335,9 @@ class Game:
             "playerList": self.get_player_ids(),
             "playerId": current_player_id,
             "cursor": self.cursor_position,
+            "rematchTimeLeft": self.time_manager.rematch_time_left,
+            "readyList": self.get_rematch_ready(),
+            "hostId": self.room.host_id,
         }
 
     async def handle_player_disconnect(self, player_id):
@@ -313,12 +346,19 @@ class Game:
             return
         if self.state == GameState.RESULTS:
             self.players.pop(disconnected_index)
+            self.rematch_ready.discard(player_id)
+            if self.current_player_idx >= len(self.players):
+                self.current_player_idx = 0
+            if self.room.host_id == player_id:
+                self.room.host_id = self.players[0].id if self.players else None
+            await self.room.broadcast({
+                "type": "rematch-update",
+                "playerList": self.get_player_ids(),
+                "readyList": self.get_rematch_ready(),
+                "hostId": self.room.host_id,
+            })
             return
-        
-        if self.state == GameState.RESULTS:
-            self.players.pop(disconnected_index)
-            return
-        
+
         was_imposter = self.players[disconnected_index].is_imposter()
         was_current_player = disconnected_index == self.current_player_idx
 

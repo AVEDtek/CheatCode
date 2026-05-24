@@ -33,6 +33,7 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
           codingTime: data.codingTime,
           votingTime: data.votingTime,
           players: [data.playerId],
+          hostId: data.hostId,
         },
       });
     });

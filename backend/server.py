@@ -65,7 +65,8 @@ async def handle_disconnect(room_id, player_id):
             else:
                 response = {
                     "type": "room-players-update",
-                    "playerList": room.get_players_ids()
+                    "playerList": room.get_players_ids(),
+                    "hostId": room.host_id
                 }
                 await room.broadcast(response)
                 if room.game_started():
@@ -100,15 +101,17 @@ async def handle_create_room(websocket, data):
     room_id = room_manager.create_room(difficulty, capacity, coding_time, voting_time)
     room = room_manager.get_room(room_id)
     room.add_player(player_id, websocket)
+    room.host_id = player_id
 
     response = {
         "type": "room-created",
         "roomId": room_id,
-        "playerId": player_id, 
+        "playerId": player_id,
         "difficulty": difficulty,
         "capacity": capacity,
         "codingTime": coding_time,
-        "votingTime": voting_time
+        "votingTime": voting_time,
+        "hostId": room.host_id
     }
     await websocket.send(json.dumps(response))
     return {
@@ -165,12 +168,14 @@ async def handle_join_room(websocket, data):
         "capacity": room.capacity,
         "codingTime": room.coding_time,
         "votingTime": room.voting_time,
-        "playerList": room.get_players_ids()
+        "playerList": room.get_players_ids(),
+        "hostId": room.host_id
     }
     await websocket.send(json.dumps(response))
     response = {
         "type": "room-players-update",
-        "playerList": room.get_players_ids()
+        "playerList": room.get_players_ids(),
+        "hostId": room.host_id
     }
     await room.broadcast(response)
     return {
@@ -496,6 +501,44 @@ async def handle_cast_vote(websocket, data):
             "votedCorrectly": game.get_imposter_id() in game.get_voted()
         }
         await room.broadcast(response)
+
+@handler("play-again")
+async def handle_play_again(websocket, data):
+    try:
+        room_id = data["roomId"]
+        player_id = data["playerId"]
+    except KeyError as e:
+        await websocket.send(f"Missing field: {str(e)}")
+        return
+
+    if not room_manager.room_exists(room_id):
+        await websocket.send("No room found: " + room_id)
+        return
+
+    room = room_manager.get_room(room_id)
+    if not room.game_started():
+        await websocket.send("Game not in progress")
+        return
+
+    game = room.get_game()
+
+    if game.state != GameState.RESULTS:
+        await websocket.send("Rematch not available")
+        return
+
+    if not room.player_exists(player_id):
+        await websocket.send("Player not found in room: " + player_id)
+        return
+
+    game.add_rematch_ready(player_id)
+
+    response = {
+        "type": "rematch-update",
+        "playerList": game.get_player_ids(),
+        "readyList": game.get_rematch_ready(),
+        "hostId": room.host_id
+    }
+    await room.broadcast(response)
 
 @handler("get-health")
 async def handle_get_health(websocket, data):

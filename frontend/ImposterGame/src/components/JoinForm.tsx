@@ -31,7 +31,8 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
           capacity: data.capacity,
           codingTime: data.codingTime,
           votingTime: data.votingTime,
-          players: data.playerList
+          players: data.playerList,
+          hostId: data.hostId
         },
       });
     });
