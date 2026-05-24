@@ -4,7 +4,7 @@ import Info from "../components/Info.tsx";
 import JoinForm from "../components/JoinForm.tsx";
 import CreateForm from "../components/CreateForm.tsx"
 
-import { Github, CircleQuestionMark } from "lucide-react";
+import { Github, CircleQuestionMark, MessageSquare } from "lucide-react";
 
 export default function Welcome() {
     const [isJoinOpen, setIsJoinOpen] = useState<boolean>(false);
@@ -25,8 +25,14 @@ export default function Welcome() {
                     </button>
 
                     <div className="ml-auto flex items-center gap-4">
-                        <a href="https://forms.gle/KonNtSsUevfqJ9dD7" className="text-white font-bold hover:cursor-pointer hover:text-purple-500 transition-colors " target="_blank" rel="noopener noreferrer">
-                            Help us improve!
+                        <a
+                            href="https://forms.gle/KonNtSsUevfqJ9dD7"
+                            className="p-2 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-all duration-200"
+                            title="Give feedback"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <MessageSquare size={22} />
                         </a>
                         <a
                             href="https://github.com/AbdouMurad/ImposterGame"
