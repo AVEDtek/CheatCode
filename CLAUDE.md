@@ -18,7 +18,7 @@ pip install -r backend/requirements.txt
 python3 -m backend.server
 
 # Frontend
-cd frontend/ImposterGame
+cd frontend
 npm install
 npm run dev        # Vite dev server, usually http://localhost:5173
 npm run build      # tsc -b && vite build  (type-check is part of the build)
@@ -32,7 +32,7 @@ For solo testing, set `MIN_PLAYERS_TO_START=1` and `MIN_PLAYERS_TO_CONTINUE=1` i
 
 ## Environment / configuration
 
-A single `.env` at the **repository root** configures both halves. Vite reads it too — `vite.config.ts` sets `envDir: '../../'`, so `VITE_*` vars come from the root `.env`, not from `frontend/ImposterGame/`. (`.env.example` is the source of truth for available keys.) Both `.env` files are gitignored.
+A single `.env` at the **repository root** configures both halves. Vite reads it too — `vite.config.ts` sets `envDir: '../'`, so `VITE_*` vars come from the root `.env`, not from `frontend/`. (`.env.example` is the source of truth for available keys.) Both `.env` files are gitignored.
 
 Backend reads config via `os.getenv` at import time in `server.py` and `game.py` (e.g. `MIN_PLAYERS_TO_START`, `MAX_CODE_LENGTH`, `HOST`/`PORT`). Frontend reads `VITE_BACKEND_URL` (the WebSocket URL) and `VITE_MIN_PLAYERS_TO_START`.
 
@@ -67,7 +67,7 @@ Gameplay flow:
 
 `run_tests` first health-checks a remote "CheatCode Engine" at `http://127.0.0.1:8001/status`. If healthy, it POSTs to `/execute` (which returns a `job_id`) and polls `/result/{job_id}` until terminal. If the engine is unreachable/unhealthy, it falls back to `locally_execute_tests`, which writes the submitted code + a generated runner into a temp dir and runs it in a `subprocess` with a timeout. Local fallback is dev-only and can be disabled with `ALLOW_LOCAL_TEST_EXECUTION=false`. The submitted code's first `def` is auto-detected (via `ast`) as the function under test; inputs are spread as `*args`, `**kwargs`, or a single arg depending on shape. The engine itself is a separate service, not part of this repo.
 
-### Frontend (`frontend/ImposterGame/`)
+### Frontend (`frontend/`)
 
 React 19 + react-router-dom v7 + Tailwind v4 (CSS-first config via `@theme` in `src/index.css`; brand colors like `brand-black`) + Monaco editor. Three nested context providers (`src/contexts/`) own all shared state:
 - **`SocketContext`** — single WebSocket for the app's lifetime. Exposes `send(request)` and `onMessage(type, listener)`, a pub/sub registry that returns an unsubscribe fn. All other contexts/components subscribe through it; nothing else touches the raw socket.

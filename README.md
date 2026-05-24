@@ -23,7 +23,7 @@ backend/
 	managers/                 # Room/game/test/time managers
 	models/                   # Core game state models
 
-frontend/ImposterGame/
+frontend/
 	src/                      # React app pages, components, and contexts
 ```
 
@@ -79,11 +79,11 @@ python3 -m backend.server
 Open a second terminal:
 
 ```bash
-cd frontend/ImposterGame
+cd frontend
 npm install
 ```
 
-Create `frontend/ImposterGame/.env`:
+Create `frontend/.env`:
 
 ```env
 VITE_BACKEND_URL=ws://localhost:8765

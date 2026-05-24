@@ -17,7 +17,7 @@ Backend runs on port `8765`.
 Open a second terminal:
 
 ```bash
-cd /home/ubuntu/ImposterGame/frontend/ImposterGame
+cd /home/ubuntu/ImposterGame/frontend
 npm install
 npm run dev -- --host 0.0.0.0 --port 5173
 ```
