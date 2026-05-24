@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useRoom } from "../contexts/RoomContext.tsx";
 
-// type that defines a particular platform, contains xy position along with width and height
 type Platform = {
     x: number;
     y: number;
@@ -27,7 +27,6 @@ const WORLD_HEIGHT = 180;
 const PLAYER_SIZE = 12;
 const GOAL_SIZE = 10;
 
-// platform map
 const PLATFORMS: Platform[] = [
     { x: 0, y: 164, w: 320, h: 16 },
     { x: 36, y: 136, w: 74, h: 10 },
@@ -50,8 +49,10 @@ const INITIAL_GOAL: GoalState = {
 };
 
 export default function LobbyPlatformer() {
-    const [playerScore, setPlayerScore] = useState(0);
+    const { players, capacity, hostId, username } = useRoom();
+    const effectiveHost = hostId || players[0];
 
+    const [playerScore, setPlayerScore] = useState(0);
     const [player, setPlayer] = useState<PlayerState>(INITIAL_PLAYER);
     const [goal, setGoal] = useState<GoalState>(INITIAL_GOAL);
 
@@ -263,17 +264,35 @@ export default function LobbyPlatformer() {
     }, []);
 
     return (
-        <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 p-3">
-            <div className="mb-2 flex items-center justify-between gap-3">
-                <div>
-                    <p className="text-xs uppercase tracking-widest font-semibold text-gray-500">Mini Platformer</p>
-                    <p className="text-[11px] text-gray-400">Move with WASD or arrows. Jump with Space.</p>
+        <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 p-4">
+            <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                    <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Host</p>
+                    <p className="mt-1 text-gray-100 font-semibold truncate">{effectiveHost}</p>
                 </div>
-                <p className="text-[12px] text-gray-400">Score: {playerScore}</p>
+                <div className="shrink-0 text-right">
+                    <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Capacity</p>
+                    <p className="mt-1 text-gray-300 text-sm">{capacity} players</p>
+                </div>
             </div>
 
+            <div className="mt-4">
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-widest text-gray-500 font-semibold">
+                    <span>Lobby Fill</span>
+                    <span>{players.length}/{capacity}</span>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
+                    <div
+                        className="h-full rounded-full bg-purple-600 transition-all duration-300"
+                        style={{ width: `${capacity > 0 ? (players.length / capacity) * 100 : 0}%` }}
+                    />
+                </div>
+            </div>
+
+            <p className="mt-2 text-[11px] text-gray-400">Move with WASD or arrows. Jump with Space.</p>
+
             <div
-                className="relative w-full overflow-hidden rounded-xl border border-gray-700 bg-[linear-gradient(180deg,#111827_0%,#0b1220_60%,#060b14_100%)]"
+                className="relative mt-2 w-full overflow-hidden rounded-xl border border-gray-700 bg-[linear-gradient(180deg,#111827_0%,#0b1220_60%,#060b14_100%)]"
                 style={{ aspectRatio: "16 / 9" }}
             >
                 {PLATFORMS.map((platform, index) => (
@@ -310,6 +329,18 @@ export default function LobbyPlatformer() {
                     }}
                     aria-hidden="true"
                 />
+
+                <div
+                    className="absolute z-10 pointer-events-none flex flex-col items-center"
+                    style={{
+                        left: `${((player.x + PLAYER_SIZE / 2) / WORLD_WIDTH) * 100}%`,
+                        top: `${(player.y / WORLD_HEIGHT) * 100}%`,
+                        transform: "translate(-50%, calc(-100% - 3px))",
+                    }}
+                >
+                    <span className="text-[8px] font-semibold leading-tight whitespace-nowrap text-gray-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{username}</span>
+                    <span className="text-[7px] leading-tight text-gray-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{playerScore}</span>
+                </div>
             </div>
         </div>
     );
