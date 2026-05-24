@@ -4,13 +4,14 @@ from backend.models.player import Player
 from backend.models.game import Game
 
 class Room:
-    def __init__(self, id, difficulty, capacity, coding_time, voting_time):
+    def __init__(self, id, difficulty, capacity, coding_time, voting_time, turn_duration=30):
         self.id = id
-        self.players = [] 
+        self.players = []
         self.difficulty = difficulty
         self.capacity = capacity
         self.coding_time = coding_time
         self.voting_time = voting_time
+        self.turn_duration = turn_duration
         self.game = None
         self.host_id = None
         self.game_start_lock = asyncio.Lock()
@@ -33,7 +34,7 @@ class Room:
         self.game = None
 
     def create_game(self):
-        self.game = Game(self, self.players, self.difficulty, self.coding_time, self.voting_time)
+        self.game = Game(self, self.players, self.difficulty, self.coding_time, self.voting_time, self.turn_duration)
         return self.game
 
     def get_players_ids(self):

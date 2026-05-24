@@ -24,6 +24,8 @@ type RoomContextValue = {
     setCodingTime: React.Dispatch<React.SetStateAction<number>>;
     votingTime: number;
     setVotingTime: React.Dispatch<React.SetStateAction<number>>;
+    turnDuration: number;
+    setTurnDuration: React.Dispatch<React.SetStateAction<number>>;
     players: string[];
     setPlayers: React.Dispatch<React.SetStateAction<string[]>>;
     hostId: string;
@@ -46,6 +48,8 @@ const RoomContext = createContext<RoomContextValue>({
     setCodingTime: (_codingTime: React.SetStateAction<number>) => { },
     votingTime: 0,
     setVotingTime: (_votingTime: React.SetStateAction<number>) => { },
+    turnDuration: 30,
+    setTurnDuration: (_turnDuration: React.SetStateAction<number>) => { },
     players: [],
     setPlayers: (_players: React.SetStateAction<string[]>) => { },
     hostId: "",
@@ -64,6 +68,7 @@ export default function RoomProvider({ children }: RoomProviderProps) {
     const [capacity, setCapacity] = useState<number>(0);
     const [codingTime, setCodingTime] = useState<number>(0);
     const [votingTime, setVotingTime] = useState<number>(0);
+    const [turnDuration, setTurnDuration] = useState<number>(30);
     const [players, setPlayers] = useState<string[]>([]);
     const [hostId, setHostId] = useState<string>("");
     const [rematchActive, setRematchActive] = useState<boolean>(false);
@@ -136,6 +141,8 @@ export default function RoomProvider({ children }: RoomProviderProps) {
         setCodingTime,
         votingTime,
         setVotingTime,
+        turnDuration,
+        setTurnDuration,
         players,
         setPlayers,
         hostId,

@@ -47,13 +47,13 @@ class Commit(TypedDict):
     code: str
 
 class Game:
-    def __init__(self, room, players, difficulty, coding_time, voting_time):
+    def __init__(self, room, players, difficulty, coding_time, voting_time, turn_duration=30):
         self.room = room
 
         self.state = GameState.BRIEFING
         self._transition_lock = asyncio.Lock()
 
-        self.time_manager = TimeManager(self, room, coding_time, voting_time)
+        self.time_manager = TimeManager(self, room, coding_time, voting_time, turn_duration)
         self.start_timer()
 
         self.players = players
@@ -331,6 +331,7 @@ class Game:
             "briefingTimeLeft": self.time_manager.briefing_time_left,
             "codingTimeLeft": self.time_manager.coding_time_left,
             "turnTimeLeft": self.time_manager.turn_time_left,
+            "turnDuration": self.time_manager.TURN_DURATION,
             "votingTimeLeft": self.time_manager.voting_time_left,
             "playerList": self.get_player_ids(),
             "playerId": current_player_id,

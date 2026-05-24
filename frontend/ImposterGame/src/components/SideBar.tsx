@@ -1,4 +1,5 @@
 import { useGame } from "../contexts/GameContext.tsx";
+import { useRoom } from "../contexts/RoomContext.tsx";
 import { useEffect, useRef } from "react";
 import UserCard from "./UserCard.tsx";
 
@@ -9,6 +10,7 @@ export default function SideBar() {
         players,
         currentPlayer
     } = useGame();
+    const { turnDuration } = useRoom();
 
     const CLIP_URL = "/sounds/clockTicking.mp3";
     const PLAY_MS = 5000; //5 seconds
@@ -78,7 +80,7 @@ export default function SideBar() {
                     <div className="mt-3 h-1.5 w-full rounded-full bg-gray-700 overflow-hidden">
                         <div
                             className="h-full bg-purple-600 transition-all duration-1000"
-                            style={{ width: `${((turnTime % 60) / 30) * 100}%` }}
+                            style={{ width: `${(turnTime / turnDuration) * 100}%` }}
                         />
                     </div>
                 </div>

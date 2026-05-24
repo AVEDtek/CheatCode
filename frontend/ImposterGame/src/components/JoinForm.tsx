@@ -31,6 +31,7 @@ export default function JoinForm({ onCancelJoinClick }: JoinFormProps) {
           capacity: data.capacity,
           codingTime: data.codingTime,
           votingTime: data.votingTime,
+          turnDuration: data.turnDuration,
           players: data.playerList,
           hostId: data.hostId
         },

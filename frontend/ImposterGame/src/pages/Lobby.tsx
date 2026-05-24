@@ -16,6 +16,7 @@ type LobbyLocationState = {
   capacity: number;
   codingTime: number;
   votingTime: number;
+  turnDuration: number;
   players: string[];
   hostId: string;
 };
@@ -45,6 +46,8 @@ export default function Lobby() {
     setCodingTime,
     votingTime,
     setVotingTime,
+    turnDuration,
+    setTurnDuration,
     players,
     setPlayers,
     hostId,
@@ -87,6 +90,7 @@ export default function Lobby() {
     setCapacity(navState.capacity);
     setCodingTime(navState.codingTime);
     setVotingTime(navState.votingTime);
+    setTurnDuration(navState.turnDuration ?? 30);
     setHostId(navState.hostId);
 
     setPlayers(navState.players);
@@ -232,7 +236,7 @@ export default function Lobby() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
                       <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Difficulty</p>
                       <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{difficulty || "Not set"}</p>
@@ -246,6 +250,11 @@ export default function Lobby() {
                     <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
                       <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Voting</p>
                       <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedVotingTime}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
+                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Turn</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{turnDuration}s</p>
                     </div>
                   </div>
 

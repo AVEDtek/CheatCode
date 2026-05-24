@@ -10,6 +10,7 @@ Frontend -> Backend:
         capacity
         codingTime
         votingTime
+        turnDuration (30 or 60, seconds per turn)
     Response: room-created
         roomId
         playerId
@@ -17,6 +18,7 @@ Frontend -> Backend:
         capacity
         codingTime
         votingTime
+        turnDuration
         hostId
 
     Request: join-room
@@ -29,6 +31,7 @@ Frontend -> Backend:
         capacity
         codingTime
         votingTime
+        turnDuration
         playerList
         hostId
     Response: unable-to-join
@@ -141,6 +144,20 @@ Backend -> Frontend
         playerList
         hostId
         (rematch window closed: non-ready players pruned, game reset, host may start)
+
+    Message: game-sync (reply to sync-game-state; also sent on visibilitychange)
+        gameState
+        briefingTimeLeft
+        codingTimeLeft
+        turnTimeLeft
+        turnDuration
+        votingTimeLeft
+        playerList
+        playerId
+        cursor
+        rematchTimeLeft
+        readyList
+        hostId
 
     Message: imposter-disconnected
 

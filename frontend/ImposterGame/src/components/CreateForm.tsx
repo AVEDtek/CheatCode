@@ -21,6 +21,7 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
   const [capacity, setCapacity] = useState<number>(5);
   const [codingTime, setCodingTime] = useState<number>(5);
   const [votingTime, setVotingTime] = useState<number>(2);
+  const [turnDuration, setTurnDuration] = useState<number>(30);
 
   useEffect(() => {
     const unsubRoomCreate = onMessage("room-created", (data) => {
@@ -32,6 +33,7 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
           capacity: data.capacity,
           codingTime: data.codingTime,
           votingTime: data.votingTime,
+          turnDuration: data.turnDuration,
           players: [data.playerId],
           hostId: data.hostId,
         },
@@ -56,7 +58,8 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
       difficulty: difficulty,
       capacity: capacity,
       codingTime: codingTime * 60,
-      votingTime: votingTime * 60
+      votingTime: votingTime * 60,
+      turnDuration: turnDuration
     };
     send(request);
   }
@@ -146,6 +149,19 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
                   <option value={1.5}>1.5 Minutes</option>
                   <option value={2}>2 Minutes</option>
                   <option value={2.5}>2.5 Minutes</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="turn-duration" className="text-gray-400 text-xs uppercase tracking-widest font-semibold">Turn Duration</label>
+                <select
+                  id="turn-duration"
+                  value={turnDuration}
+                  onChange={(e) => setTurnDuration(Number(e.target.value))}
+                  className="border border-gray-700 rounded-xl bg-brand-gray-light text-gray-100 px-4 py-2.5 text-sm outline-none focus:border-purple-600 transition-colors duration-200"
+                >
+                  <option value={30}>30 Seconds</option>
+                  <option value={60}>60 Seconds</option>
                 </select>
               </div>
             </div>

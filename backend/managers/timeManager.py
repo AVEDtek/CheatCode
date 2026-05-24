@@ -2,13 +2,13 @@ import asyncio
 
 
 class TimeManager:
-    def __init__(self, game, room, coding_time, voting_time):
+    def __init__(self, game, room, coding_time, voting_time, turn_duration=30):
         self.game = game
         self.room = room
 
         self.BRIEFING_DURATION = 30
         self.CODING_DURATION = coding_time
-        self.TURN_DURATION = 30
+        self.TURN_DURATION = turn_duration
         self.VOTING_DURATION = voting_time
         self.REMATCH_DURATION = 30
 

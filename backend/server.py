@@ -94,11 +94,16 @@ async def handle_create_room(websocket, data):
         capacity = data["capacity"]
         coding_time = data["codingTime"]
         voting_time = data["votingTime"]
+        turn_duration = data["turnDuration"]
     except KeyError as e:
         await websocket.send(f"Missing field: {str(e)}")
         return
-    
-    room_id = room_manager.create_room(difficulty, capacity, coding_time, voting_time)
+
+    if turn_duration not in (30, 60):
+        await websocket.send(json.dumps({"type": "error", "message": "turnDuration must be 30 or 60"}))
+        return
+
+    room_id = room_manager.create_room(difficulty, capacity, coding_time, voting_time, turn_duration)
     room = room_manager.get_room(room_id)
     room.add_player(player_id, websocket)
     room.host_id = player_id
@@ -111,6 +116,7 @@ async def handle_create_room(websocket, data):
         "capacity": capacity,
         "codingTime": coding_time,
         "votingTime": voting_time,
+        "turnDuration": turn_duration,
         "hostId": room.host_id
     }
     await websocket.send(json.dumps(response))
@@ -168,6 +174,7 @@ async def handle_join_room(websocket, data):
         "capacity": room.capacity,
         "codingTime": room.coding_time,
         "votingTime": room.voting_time,
+        "turnDuration": room.turn_duration,
         "playerList": room.get_players_ids(),
         "hostId": room.host_id
     }
