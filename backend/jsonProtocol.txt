@@ -97,6 +97,20 @@ Frontend -> Backend:
         playerId
         (adds the player to the rematch ready set; valid only during RESULTS)
 
+    Request: lobby-player-pos
+        roomId
+        playerId
+        x
+        y
+        score
+        (throttled position update sent ≤20/s while on lobby page; ignored if game in progress)
+
+    Request: lobby-goal-reached
+        roomId
+        playerId
+        goalVersion
+        (sent when local player collides with goal; server validates goalVersion to prevent double-moves)
+
 Backend -> Frontend
     Message: room-players-update
         playerList
@@ -158,6 +172,19 @@ Backend -> Frontend
         rematchTimeLeft
         readyList
         hostId
+
+    Message: lobby-player-pos
+        playerId
+        x
+        y
+        score
+        (relayed to all room members except sender; only while game not started)
+
+    Message: lobby-goal-update
+        x
+        y
+        goalVersion
+        (broadcast to all room members when goal moves; also sent directly to a joining player)
 
     Message: imposter-disconnected
 

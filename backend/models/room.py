@@ -15,6 +15,10 @@ class Room:
         self.game = None
         self.host_id = None
         self.game_start_lock = asyncio.Lock()
+        # Lobby platformer shared state
+        self.lobby_goal_x = 240
+        self.lobby_goal_y = 72
+        self.lobby_goal_version = 0
 
     def add_player(self, player_id, websocket):
         player = Player(player_id, websocket)
@@ -56,4 +60,11 @@ class Room:
         await asyncio.gather(*[
             player.websocket.send(json.dumps(message))
             for player in self.players
+        ], return_exceptions=True)
+
+    async def broadcast_except(self, excluded_websocket, message):
+        await asyncio.gather(*[
+            player.websocket.send(json.dumps(message))
+            for player in self.players
+            if player.websocket is not excluded_websocket
         ], return_exceptions=True)

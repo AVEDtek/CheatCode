@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRoom } from "../contexts/RoomContext.tsx";
+import { useSocket } from "../contexts/SocketContext.tsx";
 
 type Platform = {
     x: number;
@@ -22,6 +23,12 @@ type GoalState = {
     y: number;
 };
 
+type RemotePlayer = {
+    x: number;
+    y: number;
+    score: number;
+};
+
 const WORLD_WIDTH = 320;
 const WORLD_HEIGHT = 180;
 const PLAYER_SIZE = 12;
@@ -32,6 +39,17 @@ const PLATFORMS: Platform[] = [
     { x: 36, y: 136, w: 74, h: 10 },
     { x: 132, y: 108, w: 66, h: 10 },
     { x: 218, y: 82, w: 74, h: 10 },
+];
+
+const PLAYER_COLORS = [
+    "#a78bfa",
+    "#34d399",
+    "#60a5fa",
+    "#f87171",
+    "#fbbf24",
+    "#f472b6",
+    "#2dd4bf",
+    "#a3e635",
 ];
 
 const INITIAL_PLAYER: PlayerState = {
@@ -49,22 +67,35 @@ const INITIAL_GOAL: GoalState = {
 };
 
 export default function LobbyPlatformer() {
-    const { players, capacity, hostId, username } = useRoom();
+    const { players, capacity, hostId, username, roomId } = useRoom();
+    const { send, onMessage, isConnected } = useSocket();
     const effectiveHost = hostId || players[0];
 
     const [playerScore, setPlayerScore] = useState(0);
     const [player, setPlayer] = useState<PlayerState>(INITIAL_PLAYER);
     const [goal, setGoal] = useState<GoalState>(INITIAL_GOAL);
+    const [remotePlayers, setRemotePlayers] = useState<Map<string, RemotePlayer>>(new Map());
 
     const stateRef = useRef<PlayerState>(INITIAL_PLAYER);
     const goalRef = useRef<GoalState>(INITIAL_GOAL);
-    const keysRef = useRef({
-        left: false,
-        right: false,
-        jump: false,
-    });
+    const goalVersionRef = useRef(0);
+    const goalMovePendingRef = useRef(false);
+    const playerScoreRef = useRef(0);
+    const remotePlayersRef = useRef<Map<string, RemotePlayer>>(new Map());
+    const lastSentPosRef = useRef({ x: INITIAL_PLAYER.x, y: INITIAL_PLAYER.y });
+    const keysRef = useRef({ left: false, right: false, jump: false });
     const frameRef = useRef<number | null>(null);
     const lastTimeRef = useRef<number | null>(null);
+
+    // Stable refs so the 60 Hz game loop always reads current values
+    const sendRef = useRef(send);
+    const isConnectedRef = useRef(isConnected);
+    const lobbyCtxRef = useRef({ roomId, username });
+    useEffect(() => { sendRef.current = send; }, [send]);
+    useEffect(() => { isConnectedRef.current = isConnected; }, [isConnected]);
+    useEffect(() => { lobbyCtxRef.current = { roomId, username }; }, [roomId, username]);
+
+    const localColor = PLAYER_COLORS[players.indexOf(username) % PLAYER_COLORS.length] ?? PLAYER_COLORS[0];
 
     const syncState = (nextState: PlayerState) => {
         stateRef.current = nextState;
@@ -85,23 +116,64 @@ export default function LobbyPlatformer() {
         return { x: Math.floor(last.x + Math.random() * last.span), y: last.y };
     };
 
-    const moveGoal = () => {
-        const nextGoal = randomGoal();
-        goalRef.current = nextGoal;
-        setGoal(nextGoal);
-        setPlayerScore((score) => score + 1);
-    };
-
     const resetGame = () => {
         const resetState = { ...INITIAL_PLAYER };
         stateRef.current = resetState;
-        goalRef.current = INITIAL_GOAL;
+        if (!isConnectedRef.current) {
+            goalRef.current = INITIAL_GOAL;
+            goalVersionRef.current = 0;
+            setGoal(INITIAL_GOAL);
+        }
+        goalMovePendingRef.current = false;
         keysRef.current.jump = false;
         lastTimeRef.current = null;
         setPlayer(resetState);
-        setGoal(INITIAL_GOAL);
     };
 
+    // Subscribe to lobby multiplayer messages
+    useEffect(() => {
+        const unsubGoalUpdate = onMessage("lobby-goal-update", (data) => {
+            const next = { x: data.x, y: data.y };
+            goalRef.current = next;
+            goalVersionRef.current = data.goalVersion;
+            goalMovePendingRef.current = false;
+            setGoal(next);
+        });
+
+        const unsubPlayerPos = onMessage("lobby-player-pos", (data) => {
+            remotePlayersRef.current.set(data.playerId, { x: data.x, y: data.y, score: data.score });
+            setRemotePlayers(new Map(remotePlayersRef.current));
+        });
+
+        return () => {
+            unsubGoalUpdate();
+            unsubPlayerPos();
+        };
+    }, [onMessage]);
+
+    // Broadcast local position at 20 Hz
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!isConnectedRef.current) return;
+            const { roomId: rId, username: uId } = lobbyCtxRef.current;
+            if (!rId || !uId) return;
+            const { x, y } = stateRef.current;
+            const last = lastSentPosRef.current;
+            if (x === last.x && y === last.y) return;
+            lastSentPosRef.current = { x, y };
+            sendRef.current({
+                type: "lobby-player-pos",
+                roomId: rId,
+                playerId: uId,
+                x,
+                y,
+                score: playerScoreRef.current,
+            });
+        }, 50);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Game loop
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
             const key = event.key.toLowerCase();
@@ -114,7 +186,7 @@ export default function LobbyPlatformer() {
                 keysRef.current.right = true;
             }
 
-            if (event.code === "Space" || key === "arrowup" || key === "w") {
+            if (key === "arrowup" || key === "w") {
                 keysRef.current.jump = true;
                 event.preventDefault();
             }
@@ -135,7 +207,7 @@ export default function LobbyPlatformer() {
                 keysRef.current.right = false;
             }
 
-            if (event.code === "Space" || key === "arrowup" || key === "w") {
+            if (key === "arrowup" || key === "w") {
                 keysRef.current.jump = false;
             }
         };
@@ -242,8 +314,25 @@ export default function LobbyPlatformer() {
             const goalCenterY = currentGoal.y + GOAL_SIZE / 2;
             const reachedGoal = Math.hypot(playerCenterX - goalCenterX, playerCenterY - goalCenterY) < 10;
 
-            if (reachedGoal) {
-                moveGoal();
+            if (reachedGoal && !goalMovePendingRef.current) {
+                if (isConnectedRef.current) {
+                    goalMovePendingRef.current = true;
+                    playerScoreRef.current++;
+                    setPlayerScore(playerScoreRef.current);
+                    const { roomId: rId, username: uId } = lobbyCtxRef.current;
+                    sendRef.current({
+                        type: "lobby-goal-reached",
+                        roomId: rId,
+                        playerId: uId,
+                        goalVersion: goalVersionRef.current,
+                    });
+                } else {
+                    const nextGoal = randomGoal();
+                    goalRef.current = nextGoal;
+                    setGoal(nextGoal);
+                    playerScoreRef.current++;
+                    setPlayerScore(playerScoreRef.current);
+                }
             }
 
             syncState({
@@ -298,7 +387,7 @@ export default function LobbyPlatformer() {
                 </div>
             </div>
 
-            <p className="mt-2 text-[11px] text-gray-400">Move with WASD or arrows. Jump with Space.</p>
+            <p className="mt-2 text-[11px] text-gray-400">Move with WASD or arrows. Jump with W or up arrow.</p>
 
             <div
                 className="relative mt-2 w-full overflow-hidden rounded-xl border border-gray-700 bg-[linear-gradient(180deg,#111827_0%,#0b1220_60%,#060b14_100%)]"
@@ -328,9 +417,46 @@ export default function LobbyPlatformer() {
                     aria-hidden="true"
                 />
 
+                {players.filter((p) => p !== username).map((playerId) => {
+                    const remote = remotePlayers.get(playerId);
+                    if (!remote) return null;
+                    const color = PLAYER_COLORS[players.indexOf(playerId) % PLAYER_COLORS.length];
+                    return (
+                        <div key={playerId}>
+                            <div
+                                className="absolute rounded-full"
+                                style={{
+                                    backgroundColor: color,
+                                    boxShadow: `0 0 14px ${color}b3`,
+                                    left: `${(remote.x / WORLD_WIDTH) * 100}%`,
+                                    top: `${(remote.y / WORLD_HEIGHT) * 100}%`,
+                                    width: `${(PLAYER_SIZE / WORLD_WIDTH) * 100}%`,
+                                    height: `${(PLAYER_SIZE / WORLD_HEIGHT) * 100}%`,
+                                }}
+                                aria-hidden="true"
+                            />
+                            <div
+                                className="absolute z-10 pointer-events-none flex flex-col items-center"
+                                style={{
+                                    left: `${((remote.x + PLAYER_SIZE / 2) / WORLD_WIDTH) * 100}%`,
+                                    top: `${(remote.y / WORLD_HEIGHT) * 100}%`,
+                                    transform: "translate(-50%, calc(-100% - 3px))",
+                                }}
+                            >
+                                <span className="text-[8px] font-semibold leading-tight whitespace-nowrap text-gray-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{playerId}</span>
+                                <span className="text-[7px] leading-tight text-gray-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{remote.score}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+
                 <div
-                    className={`absolute rounded-full transition-colors duration-150 ${player.won ? "bg-green-300 shadow-[0_0_20px_rgba(134,239,172,0.8)]" : "bg-purple-300 shadow-[0_0_20px_rgba(192,132,252,0.7)]"}`}
+                    className="absolute rounded-full transition-shadow duration-150"
                     style={{
+                        backgroundColor: localColor,
+                        boxShadow: player.won
+                            ? `0 0 24px ${localColor}, 0 0 8px ${localColor}`
+                            : `0 0 14px ${localColor}b3`,
                         left: `${(player.x / WORLD_WIDTH) * 100}%`,
                         top: `${(player.y / WORLD_HEIGHT) * 100}%`,
                         width: `${(PLAYER_SIZE / WORLD_WIDTH) * 100}%`,

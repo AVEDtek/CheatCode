@@ -3,6 +3,7 @@ import websockets
 import json
 import os
 import re
+import random
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -39,6 +40,27 @@ MAX_CHAT_MESSAGE_LENGTH = _get_int_env("MAX_CHAT_MESSAGE_LENGTH", default=600, m
 MAX_CODE_LENGTH = _get_int_env("MAX_CODE_LENGTH", default=30000, minimum=100)
 HEALTH_ENDPOINT_ENABLED = _get_bool_env("HEALTH_ENDPOINT_ENABLED", default=False)
 ROOM_ID_PATTERN = re.compile(r"^[A-Z0-9]{6}$")
+
+# Lobby platformer geometry — must stay in sync with PLATFORMS/GOAL_SIZE in LobbyPlatformer.tsx
+_LOBBY_GOAL_SIZE = 10
+_LOBBY_PLATFORMS = [
+    (0, 164, 320, 16),
+    (36, 136, 74, 10),
+    (132, 108, 66, 10),
+    (218, 82, 74, 10),
+]
+
+def _lobby_random_goal() -> tuple[int, int]:
+    surfaces = [(p[0], p[1] - _LOBBY_GOAL_SIZE, p[2] - _LOBBY_GOAL_SIZE) for p in _LOBBY_PLATFORMS]
+    total_span = sum(s[2] for s in surfaces)
+    pick = random.random() * total_span
+    for x, y, span in surfaces:
+        if pick < span:
+            return int(x + pick), y
+        pick -= span
+    x, y, span = surfaces[-1]
+    return int(x + random.random() * span), y
+
 
 room_manager = RoomManager()
 
@@ -179,6 +201,12 @@ async def handle_join_room(websocket, data):
         "hostId": room.host_id
     }
     await websocket.send(json.dumps(response))
+    await websocket.send(json.dumps({
+        "type": "lobby-goal-update",
+        "x": room.lobby_goal_x,
+        "y": room.lobby_goal_y,
+        "goalVersion": room.lobby_goal_version,
+    }))
     response = {
         "type": "room-players-update",
         "playerList": room.get_players_ids(),
@@ -546,6 +574,61 @@ async def handle_play_again(websocket, data):
         "hostId": room.host_id
     }
     await room.broadcast(response)
+
+@handler("lobby-player-pos")
+async def handle_lobby_player_pos(websocket, data):
+    try:
+        room_id = data["roomId"]
+        player_id = data["playerId"]
+        x = float(data["x"])
+        y = float(data["y"])
+        score = int(data["score"])
+    except (KeyError, ValueError, TypeError):
+        return
+
+    if not room_manager.room_exists(room_id):
+        return
+    room = room_manager.get_room(room_id)
+    if room.game_started():
+        return
+
+    await room.broadcast_except(websocket, {
+        "type": "lobby-player-pos",
+        "playerId": player_id,
+        "x": x,
+        "y": y,
+        "score": score,
+    })
+
+
+@handler("lobby-goal-reached")
+async def handle_lobby_goal_reached(websocket, data):
+    try:
+        room_id = data["roomId"]
+        goal_version = int(data["goalVersion"])
+    except (KeyError, ValueError, TypeError):
+        return
+
+    if not room_manager.room_exists(room_id):
+        return
+    room = room_manager.get_room(room_id)
+    if room.game_started():
+        return
+    if goal_version != room.lobby_goal_version:
+        return
+
+    new_x, new_y = _lobby_random_goal()
+    room.lobby_goal_x = new_x
+    room.lobby_goal_y = new_y
+    room.lobby_goal_version += 1
+
+    await room.broadcast({
+        "type": "lobby-goal-update",
+        "x": new_x,
+        "y": new_y,
+        "goalVersion": room.lobby_goal_version,
+    })
+
 
 @handler("get-health")
 async def handle_get_health(websocket, data):
