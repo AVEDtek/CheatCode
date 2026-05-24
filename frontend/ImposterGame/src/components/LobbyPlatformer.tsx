@@ -70,10 +70,28 @@ export default function LobbyPlatformer() {
         setPlayer(nextState);
     };
 
-    const randomGoal = (): GoalState => ({
-        x: Math.floor(Math.random() * (WORLD_WIDTH - GOAL_SIZE)),
-        y: Math.floor(Math.random() * (WORLD_HEIGHT - GOAL_SIZE)),
-    });
+    const rectsOverlap = (ax: number, ay: number, aw: number, ah: number, bx: number, by: number, bw: number, bh: number) =>
+        !(ax + aw <= bx || bx + bw <= ax || ay + ah <= by || by + bh <= ay);
+
+    const randomGoal = (): GoalState => {
+        const maxAttempts = 200;
+        for (let i = 0; i < maxAttempts; i++) {
+            const x = Math.floor(Math.random() * (WORLD_WIDTH - GOAL_SIZE));
+            const y = Math.floor(Math.random() * (WORLD_HEIGHT - GOAL_SIZE));
+
+            let overlap = false;
+            for (const platform of PLATFORMS) {
+                if (rectsOverlap(x, y, GOAL_SIZE, GOAL_SIZE, platform.x, platform.y, platform.w, platform.h)) {
+                    overlap = true;
+                    break;
+                }
+            }
+
+            if (!overlap) return { x, y };
+        }
+
+        return INITIAL_GOAL; // fallback if no free spot found
+    };
 
     const moveGoal = () => {
         const nextGoal = randomGoal();
