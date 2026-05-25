@@ -38,11 +38,15 @@ export default function Lobby() {
     setRoomId,
     username,
     setUsername,
+    difficulty,
     setDifficulty,
     capacity,
     setCapacity,
+    codingTime,
     setCodingTime,
+    votingTime,
     setVotingTime,
+    turnDuration,
     setTurnDuration,
     players,
     setPlayers,
@@ -56,6 +60,9 @@ export default function Lobby() {
   const navigate = useNavigate();
   const location = useLocation();
   const navState = location.state as LobbyLocationState | undefined;
+  const formattedCodingTime = `${codingTime / 60} min`;
+  const formattedVotingTime = `${votingTime / 60} min`;
+
   useEffect(() => {
     const unsubGameStart = onMessage("game-started", (data) => {
       navigate("/Game", {
@@ -127,8 +134,8 @@ export default function Lobby() {
 
   return (
     <>
-      <div className="h-screen overflow-hidden bg-brand-black flex flex-col">
-        <div className="px-5 pt-5 pb-3 shrink-0">
+      <div className="min-h-screen bg-brand-black">
+        <div className="px-5 pt-5 pb-3">
           <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between">
             <Logo />
 
@@ -142,31 +149,21 @@ export default function Lobby() {
           </div>
         </div>
 
-        <div className="px-4 pb-6 flex-1 min-h-0 flex flex-col">
-          <div className="mx-auto w-full max-w-[1180px] rounded-2xl border border-gray-800 bg-gradient-to-b from-brand-black via-brand-black to-[#13131b]/60 p-2 flex flex-col flex-1 min-h-0">
-            <div className="grid flex-1 min-h-0 grid-cols-1 gap-2 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="px-4 pb-6">
+          <div className="mx-auto w-full max-w-[1180px] rounded-2xl border border-gray-800 bg-gradient-to-b from-brand-black via-brand-black to-[#13131b]/60 p-2">
+            <div className="grid min-h-[74vh] grid-cols-1 gap-2 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="border-2 border-gray-700 text-gray-200 rounded-2xl bg-brand-gray flex min-h-0 flex-col">
                 <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-700">
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-5 bg-purple-600 rounded-full" />
                     <h1 className="text-gray-200 font-bold text-xl">Players</h1>
                   </div>
+                  <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-gray-800 text-gray-400">
+                    {players.length} / {capacity}
+                  </span>
                 </div>
 
 
-
-                <div className="px-4 pt-4">
-                  <div className="flex items-center justify-between text-[11px] uppercase tracking-widest text-gray-500 font-semibold">
-                    <span>Lobby Fill</span>
-                    <span>{players.length}/{capacity}</span>
-                  </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
-                    <div
-                      className="h-full rounded-full bg-purple-600 transition-all duration-300"
-                      style={{ width: `${capacity > 0 ? (players.length / capacity) * 100 : 0}%` }}
-                    />
-                  </div>
-                </div>
 
                 <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto custom-scrollbar px-4 py-4">
                   {players.map((player, index) => (
@@ -190,13 +187,13 @@ export default function Lobby() {
               </div>
 
               <div className="flex flex-col justify-between border-2 border-gray-700 text-gray-200 rounded-2xl bg-brand-gray min-h-0">
-                <div className="flex flex-col gap-4 px-5 pt-5 flex-1 min-h-0 overflow-hidden">
-                  <div className="flex items-center gap-2 mb-1 shrink-0">
+                <div className="flex flex-col gap-4 px-5 pt-5">
+                  <div className="flex items-center gap-2 mb-1">
                     <div className="w-1 h-5 bg-purple-600 rounded-full" />
                     <h1 className="text-gray-200 font-bold text-xl">Room Details</h1>
                   </div>
 
-                  <div className="flex flex-col gap-1 rounded-xl border border-gray-700 bg-gray-800 p-4 shrink-0">
+                  <div className="flex flex-col gap-1 rounded-xl border border-gray-700 bg-gray-800 p-4">
                     <span className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Room Code</span>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-purple-500 text-2xl font-mono font-bold tracking-widest">
@@ -215,6 +212,28 @@ export default function Lobby() {
                   </div>
 
                   <LobbyPlatformer />
+
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
+                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Difficulty</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{difficulty || "Not set"}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
+                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Coding</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedCodingTime}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
+                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Voting</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedVotingTime}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
+                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Turn</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{turnDuration}s</p>
+                    </div>
+                  </div>
 
                 </div>
 
