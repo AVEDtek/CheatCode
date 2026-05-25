@@ -16,6 +16,7 @@ type PlayerState = {
     vy: number;
     grounded: boolean;
     won: boolean;
+    crouching: boolean;
 };
 
 type GoalState = {
@@ -27,11 +28,14 @@ type RemotePlayer = {
     x: number;
     y: number;
     score: number;
+    crouching: boolean;
 };
 
 const WORLD_WIDTH = 320;
 const WORLD_HEIGHT = 180;
 const PLAYER_SIZE = 12;
+const PLAYER_HEIGHT = 12;
+const PLAYER_CROUCH_HEIGHT = 7;
 const GOAL_SIZE = 10;
 
 const PLATFORMS: Platform[] = [
@@ -59,6 +63,7 @@ const INITIAL_PLAYER: PlayerState = {
     vy: 0,
     grounded: true,
     won: false,
+    crouching: false,
 };
 
 const INITIAL_GOAL: GoalState = {
@@ -82,8 +87,8 @@ export default function LobbyPlatformer() {
     const goalMovePendingRef = useRef(false);
     const playerScoreRef = useRef(0);
     const remotePlayersRef = useRef<Map<string, RemotePlayer>>(new Map());
-    const lastSentPosRef = useRef({ x: INITIAL_PLAYER.x, y: INITIAL_PLAYER.y });
-    const keysRef = useRef({ left: false, right: false, jump: false });
+    const lastSentPosRef = useRef({ x: INITIAL_PLAYER.x, y: INITIAL_PLAYER.y, crouching: INITIAL_PLAYER.crouching });
+    const keysRef = useRef({ left: false, right: false, jump: false, crouch: false });
     const frameRef = useRef<number | null>(null);
     const lastTimeRef = useRef<number | null>(null);
 
@@ -126,6 +131,7 @@ export default function LobbyPlatformer() {
         }
         goalMovePendingRef.current = false;
         keysRef.current.jump = false;
+        keysRef.current.crouch = false;
         lastTimeRef.current = null;
         setPlayer(resetState);
     };
@@ -141,7 +147,7 @@ export default function LobbyPlatformer() {
         });
 
         const unsubPlayerPos = onMessage("lobby-player-pos", (data) => {
-            remotePlayersRef.current.set(data.playerId, { x: data.x, y: data.y, score: data.score });
+            remotePlayersRef.current.set(data.playerId, { x: data.x, y: data.y, score: data.score, crouching: !!data.crouching });
             setRemotePlayers(new Map(remotePlayersRef.current));
         });
 
@@ -157,10 +163,10 @@ export default function LobbyPlatformer() {
             if (!isConnectedRef.current) return;
             const { roomId: rId, username: uId } = lobbyCtxRef.current;
             if (!rId || !uId) return;
-            const { x, y } = stateRef.current;
+            const { x, y, crouching } = stateRef.current;
             const last = lastSentPosRef.current;
-            if (x === last.x && y === last.y) return;
-            lastSentPosRef.current = { x, y };
+            if (x === last.x && y === last.y && crouching === last.crouching) return;
+            lastSentPosRef.current = { x, y, crouching };
             sendRef.current({
                 type: "lobby-player-pos",
                 roomId: rId,
@@ -168,6 +174,7 @@ export default function LobbyPlatformer() {
                 x,
                 y,
                 score: playerScoreRef.current,
+                crouching,
             });
         }, 50);
         return () => clearInterval(interval);
@@ -191,6 +198,11 @@ export default function LobbyPlatformer() {
                 event.preventDefault();
             }
 
+            if (key === "arrowdown" || key === "s") {
+                keysRef.current.crouch = true;
+                event.preventDefault();
+            }
+
             if (key === "r") {
                 resetGame();
             }
@@ -209,6 +221,10 @@ export default function LobbyPlatformer() {
 
             if (key === "arrowup" || key === "w") {
                 keysRef.current.jump = false;
+            }
+
+            if (key === "arrowdown" || key === "s") {
+                keysRef.current.crouch = false;
             }
         };
 
@@ -230,10 +246,39 @@ export default function LobbyPlatformer() {
             const moveLeft = keysRef.current.left;
             const moveRight = keysRef.current.right;
             const jumpPressed = keysRef.current.jump;
+            const crouchHeld = keysRef.current.crouch;
+
+            // Crouch is only effective on the ground; releasing it under an
+            // overhang keeps the player crouched until there's headroom to stand.
+            const prevHeight = current.crouching ? PLAYER_CROUCH_HEIGHT : PLAYER_HEIGHT;
+            const restingBottom = current.y + prevHeight;
+            let crouching: boolean;
+            if (!grounded) {
+                crouching = false;
+            } else if (crouchHeld) {
+                crouching = true;
+            } else if (current.crouching) {
+                const standingTop = restingBottom - PLAYER_HEIGHT;
+                crouching = PLATFORMS.some((platform) => {
+                    const overlapsX = current.x < platform.x + platform.w && current.x + PLAYER_SIZE > platform.x;
+                    const overlapsY = standingTop < platform.y + platform.h && restingBottom > platform.y;
+                    return overlapsX && overlapsY;
+                });
+            } else {
+                crouching = false;
+            }
+
+            const playerHeight = crouching ? PLAYER_CROUCH_HEIGHT : PLAYER_HEIGHT;
+            // Snapshot the true previous-frame position before the foot-anchor
+            // adjustment so ceiling collision uses the real prior head position.
+            const previousX = current.x;
+            const previousY = current.y;
+            // Keep the sprite's feet anchored when its height changes.
+            nextY += prevHeight - playerHeight;
 
             const gravity = 1800;
             const jumpVelocity = 560;
-            const maxSpeed = 180;
+            const maxSpeed = crouching ? 100 : 180;
 
             if (moveLeft && !moveRight) {
                 nextVx = -maxSpeed;
@@ -250,9 +295,6 @@ export default function LobbyPlatformer() {
             }
 
             nextVy += gravity * dt;
-
-            const previousX = nextX;
-            const previousY = nextY;
 
             nextX += nextVx * dt;
             nextY += nextVy * dt;
@@ -277,8 +319,8 @@ export default function LobbyPlatformer() {
                     continue;
                 }
 
-                const previousBottom = previousY + PLAYER_SIZE;
-                const currentBottom = nextY + PLAYER_SIZE;
+                const previousBottom = previousY + prevHeight;
+                const currentBottom = nextY + playerHeight;
                 const previousTop = previousY;
                 const currentTop = nextY;
                 const previousRight = previousX + PLAYER_SIZE;
@@ -286,7 +328,7 @@ export default function LobbyPlatformer() {
                 const previousLeft = previousX;
 
                 if (previousBottom <= platform.y && currentBottom >= platform.y) {
-                    nextY = platform.y - PLAYER_SIZE;
+                    nextY = platform.y - playerHeight;
                     nextVy = 0;
                     grounded = true;
                 } else if (previousTop >= platform.y + platform.h && currentTop <= platform.y + platform.h) {
@@ -301,14 +343,14 @@ export default function LobbyPlatformer() {
                 }
             }
 
-            if (nextY + PLAYER_SIZE >= WORLD_HEIGHT) {
-                nextY = WORLD_HEIGHT - PLAYER_SIZE;
+            if (nextY + playerHeight >= WORLD_HEIGHT) {
+                nextY = WORLD_HEIGHT - playerHeight;
                 nextVy = 0;
                 grounded = true;
             }
 
             const playerCenterX = nextX + PLAYER_SIZE / 2;
-            const playerCenterY = nextY + PLAYER_SIZE / 2;
+            const playerCenterY = nextY + playerHeight / 2;
             const currentGoal = goalRef.current;
             const goalCenterX = currentGoal.x + GOAL_SIZE / 2;
             const goalCenterY = currentGoal.y + GOAL_SIZE / 2;
@@ -342,6 +384,7 @@ export default function LobbyPlatformer() {
                 vy: nextVy,
                 grounded,
                 won: reachedGoal,
+                crouching,
             });
 
             frameRef.current = requestAnimationFrame(step);
@@ -387,7 +430,7 @@ export default function LobbyPlatformer() {
                 </div>
             </div>
 
-            <p className="mt-2 text-[11px] text-gray-400">Move with WASD or arrows. Jump with W or up arrow.</p>
+            <p className="mt-2 text-[11px] text-gray-400">Move with WASD or arrows. Jump with W or up arrow. Crouch with S or down arrow.</p>
 
             <div
                 className="relative mt-2 w-full overflow-hidden rounded-xl border border-gray-700 bg-[linear-gradient(180deg,#111827_0%,#0b1220_60%,#060b14_100%)]"
@@ -431,7 +474,7 @@ export default function LobbyPlatformer() {
                                     left: `${(remote.x / WORLD_WIDTH) * 100}%`,
                                     top: `${(remote.y / WORLD_HEIGHT) * 100}%`,
                                     width: `${(PLAYER_SIZE / WORLD_WIDTH) * 100}%`,
-                                    height: `${(PLAYER_SIZE / WORLD_HEIGHT) * 100}%`,
+                                    height: `${((remote.crouching ? PLAYER_CROUCH_HEIGHT : PLAYER_HEIGHT) / WORLD_HEIGHT) * 100}%`,
                                 }}
                                 aria-hidden="true"
                             />
@@ -460,7 +503,7 @@ export default function LobbyPlatformer() {
                         left: `${(player.x / WORLD_WIDTH) * 100}%`,
                         top: `${(player.y / WORLD_HEIGHT) * 100}%`,
                         width: `${(PLAYER_SIZE / WORLD_WIDTH) * 100}%`,
-                        height: `${(PLAYER_SIZE / WORLD_HEIGHT) * 100}%`,
+                        height: `${((player.crouching ? PLAYER_CROUCH_HEIGHT : PLAYER_HEIGHT) / WORLD_HEIGHT) * 100}%`,
                     }}
                     aria-hidden="true"
                 />

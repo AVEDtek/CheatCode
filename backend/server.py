@@ -583,6 +583,7 @@ async def handle_lobby_player_pos(websocket, data):
         x = float(data["x"])
         y = float(data["y"])
         score = int(data["score"])
+        crouching = bool(data.get("crouching", False))
     except (KeyError, ValueError, TypeError):
         return
 
@@ -598,6 +599,7 @@ async def handle_lobby_player_pos(websocket, data):
         "x": x,
         "y": y,
         "score": score,
+        "crouching": crouching,
     })
 
 

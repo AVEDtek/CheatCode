@@ -103,6 +103,7 @@ Frontend -> Backend:
         x
         y
         score
+        crouching
         (throttled position update sent ≤20/s while on lobby page; ignored if game in progress)
 
     Request: lobby-goal-reached
@@ -178,6 +179,7 @@ Backend -> Frontend
         x
         y
         score
+        crouching
         (relayed to all room members except sender; only while game not started)
 
     Message: lobby-goal-update
