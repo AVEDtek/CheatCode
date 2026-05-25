@@ -72,9 +72,11 @@ const INITIAL_GOAL: GoalState = {
 };
 
 export default function LobbyPlatformer() {
-    const { players, capacity, hostId, username, roomId } = useRoom();
+    const { players, hostId, username, roomId, difficulty, codingTime, votingTime, turnDuration } = useRoom();
     const { send, onMessage, isConnected } = useSocket();
     const effectiveHost = hostId || players[0];
+    const formattedCodingTime = `${codingTime / 60} min`;
+    const formattedVotingTime = `${votingTime / 60} min`;
 
     const [playerScore, setPlayerScore] = useState(0);
     const [player, setPlayer] = useState<PlayerState>(INITIAL_PLAYER);
@@ -406,31 +408,30 @@ export default function LobbyPlatformer() {
 
     return (
         <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 p-4">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-2 shrink-0">
                 <div className="min-w-0">
-                    <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Host</p>
-                    <p className="mt-1 text-gray-100 font-semibold truncate">{effectiveHost}</p>
+                    <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">Host</p>
+                    <p className="mt-0.5 text-gray-100 text-sm font-semibold truncate">{effectiveHost}</p>
                 </div>
-                <div className="shrink-0 text-right">
-                    <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Capacity</p>
-                    <p className="mt-1 text-gray-300 text-sm">{capacity} players</p>
+                <div className="flex shrink-0 gap-3 text-right">
+                    <div>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">Difficulty</p>
+                        <p className="mt-0.5 text-gray-300 text-sm">{difficulty || "—"}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">Coding</p>
+                        <p className="mt-0.5 text-gray-300 text-sm">{formattedCodingTime}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">Voting</p>
+                        <p className="mt-0.5 text-gray-300 text-sm">{formattedVotingTime}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">Turn</p>
+                        <p className="mt-0.5 text-gray-300 text-sm">{turnDuration}s</p>
+                    </div>
                 </div>
             </div>
-
-            <div className="mt-4">
-                <div className="flex items-center justify-between text-[11px] uppercase tracking-widest text-gray-500 font-semibold">
-                    <span>Lobby Fill</span>
-                    <span>{players.length}/{capacity}</span>
-                </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
-                    <div
-                        className="h-full rounded-full bg-purple-600 transition-all duration-300"
-                        style={{ width: `${capacity > 0 ? (players.length / capacity) * 100 : 0}%` }}
-                    />
-                </div>
-            </div>
-
-            <p className="mt-2 text-[11px] text-gray-400">Move with WASD or arrows. Jump with W or up arrow. Crouch with S or down arrow.</p>
 
             <div
                 className="relative mt-2 w-full overflow-hidden rounded-xl border border-gray-700 bg-[linear-gradient(180deg,#111827_0%,#0b1220_60%,#060b14_100%)]"
