@@ -59,6 +59,8 @@ type GameContextValue = {
     setVoted: React.Dispatch<React.SetStateAction<string[]>>;
     votedCorrectly: boolean;
     setVotedCorrectly: React.Dispatch<React.SetStateAction<boolean>>;
+    codingOverReason: string | null;
+    dismissCodingOver: () => void;
 };
 
 const GameContext = createContext<GameContextValue>({
@@ -99,7 +101,9 @@ const GameContext = createContext<GameContextValue>({
     voted: [],
     setVoted: (_voted: React.SetStateAction<string[]>) => { },
     votedCorrectly: false,
-    setVotedCorrectly: (_votedCorrectly: React.SetStateAction<boolean>) => { }
+    setVotedCorrectly: (_votedCorrectly: React.SetStateAction<boolean>) => { },
+    codingOverReason: null,
+    dismissCodingOver: () => { }
 });
 
 export default function GameProvider({ children }: GameProviderProps) {
@@ -131,6 +135,7 @@ export default function GameProvider({ children }: GameProviderProps) {
     const [votes, setVotes] = useState<any>(null);
     const [voted, setVoted] = useState<string[]>([]);
     const [votedCorrectly, setVotedCorrectly] = useState<boolean>(false);
+    const [codingOverReason, setCodingOverReason] = useState<string | null>(null);
     const codeRef = useRef<string>(code);
 
     useEffect(() => {
@@ -184,6 +189,7 @@ export default function GameProvider({ children }: GameProviderProps) {
         const unsubCodingOver = onMessage("coding-over", (data) => {
             setGameState(GameState.Voting);
             setCommits(data.commits);
+            setCodingOverReason(data.reason ?? null);
         });
         const unsubVoteCasted = onMessage("vote-casted", (data) => {
             setVotes(data.voteList);
@@ -294,7 +300,9 @@ export default function GameProvider({ children }: GameProviderProps) {
         voted,
         setVoted,
         votedCorrectly,
-        setVotedCorrectly
+        setVotedCorrectly,
+        codingOverReason,
+        dismissCodingOver: () => setCodingOverReason(null)
     }
 
     return (

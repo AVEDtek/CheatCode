@@ -212,6 +212,7 @@ class Game:
         if self.time_manager.num_rounds <= 0:
             response = {
                 "type": "coding-over",
+                "reason": "timeout",
                 "commits": self.get_commits(),
                 "votes": self.get_votes(),
                 # "chat": self.get_chat()

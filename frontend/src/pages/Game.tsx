@@ -12,6 +12,7 @@ import ResultsPanel from "../components/ResultsPanel.tsx";
 import EditorPanel from "../components/EditorPanel.tsx";
 import CommitPanel from "../components/CommitPanel.tsx";
 import ErrorPanel from "../components/ErrorPanel.tsx";
+import CodingOverPanel from "../components/CodingOverPanel.tsx";
 
 import { GameState } from "../contexts/GameContext.tsx";
 
@@ -35,7 +36,8 @@ export default function Game() {
         setChat,
         setProblem,
         setTests,
-        setCode
+        setCode,
+        codingOverReason
     } = useGame();
 
     const location = useLocation();
@@ -68,7 +70,8 @@ export default function Game() {
         <>
             {isBriefing && <BriefingPanel />}
             {gameError && <ErrorPanel />}
-            <div className={`flex h-screen flex-col bg-brand-black transition-all duration-300 ${isBriefing || gameError ? "pointer-events-none select-none" : ""}`}>
+            {codingOverReason && <CodingOverPanel />}
+            <div className={`flex h-screen flex-col bg-brand-black transition-all duration-300 ${isBriefing || gameError || codingOverReason ? "pointer-events-none select-none" : ""}`}>
                 <div className="px-5 pt-5 pb-3">
                     <div className="flex items-center justify-between">
                         <Logo />

@@ -492,6 +492,7 @@ async def handle_run_tests(websocket, data):
         
         response = {
             "type": "coding-over",
+            "reason": "solved",
             "commits": game.get_commits(),
             "votes": game.get_votes()
         }

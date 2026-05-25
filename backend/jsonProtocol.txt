@@ -136,6 +136,7 @@ Backend -> Frontend
     Message: turn-over
 
     Message: coding-over
+        reason ("solved" = a submission passed all tests; "timeout" = coding turns ran out)
         commits
         votes
 
