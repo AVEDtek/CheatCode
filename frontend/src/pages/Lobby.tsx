@@ -171,6 +171,7 @@ export default function Lobby() {
                       key={index}
                       username={player}
                       highlight={player === username}
+                      isHost={player === effectiveHost}
                       loading={rematchActive && !readyList.includes(player)}
                     />
                   ))}
@@ -211,29 +212,44 @@ export default function Lobby() {
                     </div>
                   </div>
 
-                  <LobbyPlatformer />
-
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
-                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Difficulty</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{difficulty || "Not set"}</p>
+                  <div className="flex flex-col gap-4 rounded-xl border border-gray-700 bg-brand-gray-light/30 p-4">
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-widest text-gray-500 font-semibold">
+                        <span>Lobby Fill</span>
+                        <span>{players.length}/{capacity}</span>
+                      </div>
+                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
+                        <div
+                          className="h-full rounded-full bg-purple-600 transition-all duration-300"
+                          style={{ width: `${capacity > 0 ? (players.length / capacity) * 100 : 0}%` }}
+                        />
+                      </div>
                     </div>
 
-                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
-                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Coding</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedCodingTime}</p>
-                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="rounded-xl border border-gray-700 bg-brand-gray px-3 py-3">
+                        <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Difficulty</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{difficulty || "Not set"}</p>
+                      </div>
 
-                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
-                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Voting</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedVotingTime}</p>
-                    </div>
+                      <div className="rounded-xl border border-gray-700 bg-brand-gray px-3 py-3">
+                        <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Coding</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedCodingTime}</p>
+                      </div>
 
-                    <div className="rounded-xl border border-gray-700 bg-brand-gray-light/30 px-3 py-3">
-                      <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Turn</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{turnDuration}s</p>
+                      <div className="rounded-xl border border-gray-700 bg-brand-gray px-3 py-3">
+                        <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Voting</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{formattedVotingTime}</p>
+                      </div>
+
+                      <div className="rounded-xl border border-gray-700 bg-brand-gray px-3 py-3">
+                        <p className="text-gray-500 text-[11px] uppercase tracking-widest font-semibold">Turn</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-200 truncate">{turnDuration}s</p>
+                      </div>
                     </div>
                   </div>
+
+                  <LobbyPlatformer />
 
                 </div>
 

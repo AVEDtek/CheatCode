@@ -152,17 +152,19 @@ export default function CreateForm({ onCancelCreateClick }: CreateFormProps) {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label htmlFor="turn-duration" className="text-gray-400 text-xs uppercase tracking-widest font-semibold">Turn Duration</label>
-                <select
-                  id="turn-duration"
-                  value={turnDuration}
-                  onChange={(e) => setTurnDuration(Number(e.target.value))}
-                  className="border border-gray-700 rounded-xl bg-brand-gray-light text-gray-100 px-4 py-2.5 text-sm outline-none focus:border-purple-600 transition-colors duration-200"
-                >
-                  <option value={30}>30 Seconds</option>
-                  <option value={60}>60 Seconds</option>
-                </select>
+              <div className="flex flex-col sm:col-span-2 sm:items-center">
+                <div className="flex w-full flex-col gap-2 sm:w-[calc(50%-0.5rem)]">
+                  <label htmlFor="turn-duration" className="text-gray-400 text-xs uppercase tracking-widest font-semibold">Turn Duration</label>
+                  <select
+                    id="turn-duration"
+                    value={turnDuration}
+                    onChange={(e) => setTurnDuration(Number(e.target.value))}
+                    className="border border-gray-700 rounded-xl bg-brand-gray-light text-gray-100 px-4 py-2.5 text-sm outline-none focus:border-purple-600 transition-colors duration-200"
+                  >
+                    <option value={30}>30 Seconds</option>
+                    <option value={60}>60 Seconds</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

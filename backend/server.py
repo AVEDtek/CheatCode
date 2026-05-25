@@ -44,10 +44,10 @@ ROOM_ID_PATTERN = re.compile(r"^[A-Z0-9]{6}$")
 # Lobby platformer geometry — must stay in sync with PLATFORMS/GOAL_SIZE in LobbyPlatformer.tsx
 _LOBBY_GOAL_SIZE = 10
 _LOBBY_PLATFORMS = [
-    (0, 164, 320, 16),
-    (36, 136, 74, 10),
-    (132, 108, 66, 10),
-    (218, 82, 74, 10),
+    (0, 109, 320, 11),
+    (36, 66, 74, 7),
+    (132, 84, 66, 7),
+    (218, 48, 74, 7),
 ]
 
 def _lobby_random_goal() -> tuple[int, int]:

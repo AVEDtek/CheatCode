@@ -3,10 +3,16 @@ import { User, Loader2 } from "lucide-react";
 type LobbyUserCardProps = {
     username: string;
     highlight: boolean;
+    isHost?: boolean;
     loading?: boolean;
 }
 
-export default function LobbyUserCard({ username, highlight, loading = false }: LobbyUserCardProps) {
+export default function LobbyUserCard({ username, highlight, isHost = false, loading = false }: LobbyUserCardProps) {
+    const labels: string[] = [];
+    if (isHost) labels.push("Host");
+    if (highlight) labels.push("You");
+    if (loading) labels.push("Waiting...");
+
     return (
         <>
             <div
@@ -24,15 +30,15 @@ export default function LobbyUserCard({ username, highlight, loading = false }: 
                 <span className={`text-sm font-semibold ${loading ? "text-gray-500" : highlight ? "text-white" : "text-gray-200"}`}>
                     {username}
                 </span>
-                {loading ? (
-                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                        Waiting...
+                {labels.length > 0 && (
+                    <span
+                        className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${loading
+                            ? "bg-gray-700/40 text-gray-400"
+                            : "bg-purple-500/20 text-purple-200"}`}
+                    >
+                        {labels.join(" · ")}
                     </span>
-                ) : highlight ? (
-                    <span className="ml-auto rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-200">
-                        You
-                    </span>
-                ) : null}
+                )}
             </div>
         </>
     );
